@@ -110,6 +110,8 @@
     "rootDir": "./src",           // Where your source TypeScript files live
     "outDir": "./dist",           // Where compiled JS files should go
     "esModuleInterop": true,      // Enables `import express from 'express'` style
-    "strict": true                // Enables all strict type-checking options
+    "strict": true,                // Enables all strict type-checking options
+    "baseUrl": "./src", // Optional: allows `import prisma from 'config/prisma'`
+
   }
 }
