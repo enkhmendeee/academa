@@ -1,9 +1,10 @@
 import express from 'express';
 import prisma from './config/prisma';
+import authRoutes from './routes/auth';
 
 const app = express();
 app.use(express.json());
-
+app.use('/api/auth', authRoutes);
 app.get('/users', async (req, res) => {
   const users = await prisma.user.findMany();
   res.json(users);
