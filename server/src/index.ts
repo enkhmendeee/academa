@@ -1,9 +1,8 @@
+import '../types/express';
 import express from 'express';
 import prisma from './config/prisma';
 import authRoutes from './routes/auth';
 import protectedRoutes from './routes/protected';
-
-import './express';
 
 const app = express();
 app.use(express.json());
