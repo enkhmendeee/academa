@@ -6,7 +6,6 @@ import {
   deleteHomework,
 } from "../controllers/homework.controller";
 import { authenticateToken } from "../middleware/authMiddleware";
-
 const router = express.Router();
 
 router.use(authenticateToken);
