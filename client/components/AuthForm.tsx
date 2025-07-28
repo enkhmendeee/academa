@@ -16,7 +16,7 @@ export default function AuthForm({ type, onSubmit }: Props) {
     };
 
     return (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md mx-auto">
             {type === 'register' && (
                 <input
                     type="text"
