@@ -11,7 +11,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     const decoded = jwt.verify(token, process.env.JWT_SECRET!);
 
     // Check that decoded is an object and has an id
-    if (typeof decoded === "object" && "id" in decoded) {
+    if (typeof decoded === "object" && "userId" in decoded) {
       req.user = decoded as JwtPayload & { id: number };
       return next();
     } else {
