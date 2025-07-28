@@ -10,6 +10,14 @@ export const getHomeworks = async (req: Request, res: Response) => {
   res.json(homeworks);
 };
 
+export const getHomework = async (req: Request, res: Response) => {
+  const homework = await prisma.homework.findUnique({
+    where: { id: parseInt(req.params.id), userId: req.user.id },
+    include: { course: true },
+  });
+  res.json(homework);
+};
+
 export const createHomework = async (req: Request, res: Response) => {
   const { title, description, dueDate, courseId, status, grade } = req.body;
   const userId = req.user.id;
