@@ -1,13 +1,29 @@
 import AuthForm from "../components/AuthForm";
-import { register } from "../services/auth";
+import { register as registerService } from "../services/auth";
+import { useAuth } from "../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export default function Register() {
-  const handleRegister = async ({ email, password, name }: any) => {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleRegister = async ({
+    name,
+    email,
+    password,
+  }: {
+    name?: string;
+    email: string;
+    password: string;
+  }) => {
     try {
-      await register(email, password, name);
-      window.location.href = "/";
+      // Map form's "name" to backend's "username"
+      const { token, user } = await registerService(name || "", email, password);
+
+      login(token, user);
+      navigate("/dashboard");
     } catch (err) {
-      alert("Register failed");
+      alert("Registration failed");
     }
   };
 

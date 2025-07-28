@@ -1,12 +1,17 @@
 import AuthForm from "../components/AuthForm";
-import { login } from "../services/auth";
+import { login as loginService } from "../services/auth";
+import { useAuth } from "../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const handleLogin = async ({ email, password }: any) => {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogin = async ({ email, password }: { email: string; password: string }) => {
     try {
-      await login(email, password);
-      // redirect to dashboard or home
-      window.location.href = "/";
+      const { token, user } = await loginService(email, password);
+      login(token, user); // Save to context
+      navigate("/dashboard");
     } catch (err) {
       alert("Login failed");
     }
@@ -14,3 +19,4 @@ export default function Login() {
 
   return <AuthForm type="login" onSubmit={handleLogin} />;
 }
+
