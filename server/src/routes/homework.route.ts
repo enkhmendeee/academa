@@ -1,6 +1,7 @@
 import express from "express";
 import {
   getHomeworks,
+  getHomework,
   createHomework,
   updateHomework,
   deleteHomework,

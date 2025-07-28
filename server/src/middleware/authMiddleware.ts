@@ -12,7 +12,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
 
     // Check that decoded is an object and has an id
     if (typeof decoded === "object" && "userId" in decoded) {
-      req.user = decoded as JwtPayload & { id: number };
+      req.user = { id: (decoded as any).id };
       return next();
     } else {
       return res.status(401).json({ message: "Invalid token payload" });

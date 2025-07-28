@@ -3,7 +3,8 @@ import prisma from "../config/prisma";;
 
 export const createCourse = async (req: Request, res: Response) => {
   const { name, id } = req.body;
-  const userId = req.user.id;
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   try {
     const course = await prisma.course.create({
