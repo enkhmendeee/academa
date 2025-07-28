@@ -2,16 +2,22 @@ import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
 export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader?.split(' ')[1]; // Expecting format: "Bearer <token>"
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ message: "No token provided" });
 
-  if (!token) return res.sendStatus(401); // Unauthorized
+  const token = authHeader.split(" ")[1];
 
-  jwt.verify(token, process.env.JWT_SECRET!, (err, user) => {
-    if (err) return res.sendStatus(403); // Forbidden (invalid token)
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
 
-    // Attach user info to request object for use in protected routes
-    req.user = user;
-    next();
-  });
+    // Check that decoded is an object and has an id
+    if (typeof decoded === "object" && "id" in decoded) {
+      req.user = decoded as JwtPayload & { id: number };
+      return next();
+    } else {
+      return res.status(401).json({ message: "Invalid token payload" });
+    }
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
 };
