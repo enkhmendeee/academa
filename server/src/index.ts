@@ -3,6 +3,7 @@ import prisma from './config/prisma';
 import authRoutes from './routes/auth';
 import protectedRoutes from './routes/protected';
 import homeworkRoutes from './routes/homework.route';
+import courseRoutes from './routes/courseRoutes';
 import cors from "cors";
 
 const app = express();
@@ -14,6 +15,7 @@ app.use(cors({
 app.use('/api/auth', authRoutes);
 app.use('/api', protectedRoutes);
 app.use('/api/homeworks', homeworkRoutes);
+app.use('/api/courses', courseRoutes);
 
 app.get('/users', async (req, res) => {
   const users = await prisma.user.findMany();
