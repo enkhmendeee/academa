@@ -16,7 +16,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
-    if (savedToken && savedUser) {
+    if (savedToken && savedUser && savedUser !== "undefined") {
       setToken(savedToken);
       setUser(JSON.parse(savedUser));
     }
@@ -24,7 +24,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = (token: string, user: any) => {
     localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(user));
+    if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+    }
     setToken(token);
     setUser(user);
   };
