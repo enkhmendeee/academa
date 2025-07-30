@@ -12,6 +12,7 @@ const router = express.Router();
 router.use(authenticateToken);
 
 router.get("/", getHomeworks);
+router.get("/:id", getHomework);
 router.post("/", createHomework);
 router.patch("/:id", updateHomework);
 router.delete("/:id", deleteHomework);

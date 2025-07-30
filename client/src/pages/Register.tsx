@@ -23,6 +23,7 @@ export default function Register() {
       login(token, user);
       navigate("/dashboard");
     } catch (err) {
+      console.error("Registration error:", err);
       alert("Registration failed");
     }
   };

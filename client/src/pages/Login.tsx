@@ -14,6 +14,7 @@ export default function Login() {
       login(token, user); // Save to context
       navigate("/dashboard");
     } catch (err) {
+      console.error("Login error:", err);
       alert("Login failed");
     }
   };
