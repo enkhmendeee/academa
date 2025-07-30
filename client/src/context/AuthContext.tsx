@@ -3,6 +3,7 @@ import React, { createContext, useState, useEffect, ReactNode, useMemo } from 'r
 interface AuthContextType {
   user: any;
   token: string | null;
+  loading: boolean;
   login: (token: string, user: any) => void;
   logout: () => void;
 }
@@ -12,6 +13,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<any>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
@@ -28,6 +30,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.removeItem('user');
       }
     }
+    setLoading(false);
   }, []);
 
   const login = (token: string, user: any) => {
@@ -46,7 +49,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
   };
 
-  const value = useMemo(() => ({ user, token, login, logout }), [user, token]);
+  const value = useMemo(() => ({ user, token, loading, login, logout }), [user, token, loading]);
 
   return (
     <AuthContext.Provider value={value}>
