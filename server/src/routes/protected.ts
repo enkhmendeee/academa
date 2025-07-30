@@ -5,9 +5,9 @@ import jwt from 'jsonwebtoken';
 const router = express.Router();
 
 router.get('/dashboard', authenticateToken, (req, res) => {
-  const payload = req.user as jwt.JwtPayload;
-  const userId = payload.userId;
-  res.json({ message: `Welcome, user ${userId}` });
+  const user = req.user;
+
+  res.json({ message: `Welcome, user ${user?.id}` });
 });
 
 export default router;

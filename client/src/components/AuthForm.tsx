@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
 interface Props {
-    type: "login" | "register";
-    onSubmit: (data: { email: string; password: string; name?: string }) => void;
+    readonly type: "login" | "register";
+    readonly onSubmit: (data: { email: string; password: string; name?: string }) => void;
 }
 
 export default function AuthForm({ type, onSubmit }: Props) {

@@ -12,15 +12,10 @@ export const authenticateToken = (
   const token = authHeader.split(" ")[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-
-    if (decoded && typeof decoded === "object" && "id" in decoded) {
-      req.user = { id: decoded.id }; 
-      return next();
-    }
-    
-    return res.status(401).json({ message: "Invalid token payload" });
-  } catch (err) {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload & { id: number };
+    req.user = decoded; 
+    next();
+  } catch {
     return res.status(401).json({ message: "Invalid token" });
   }
 };
