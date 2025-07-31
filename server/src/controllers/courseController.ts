@@ -2,17 +2,18 @@ import { Request, Response } from "express";
 import prisma from "../config/prisma";;
 
 export const createCourse = async (req: Request, res: Response) => {
-  const { name, id } = req.body;
-  const userId = req.user?.id;
+  const { name} = req.body;
+  const userId = req.user && req.user.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   try {
     const course = await prisma.course.create({
-      data: { name, id, userId },
+      data: { name, userId },
     });
 
     res.status(201).json(course);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Failed to create course" });
   }
 };
@@ -44,7 +45,6 @@ export const getCourseById = async (req: Request, res: Response) => {
 
 export const deleteCourse = async (req: Request, res: Response) => {
   const courseId = parseInt(req.params.id);
-  const userId = req.user.id;
 
   try {
     await prisma.course.delete({

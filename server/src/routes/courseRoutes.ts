@@ -14,6 +14,7 @@ const router = express.Router();
 router.post(
   "/",
   [
+    authenticateToken,
     body("name").isString().notEmpty(),
     validateRequest,
   ],
@@ -23,18 +24,18 @@ router.get("/", authenticateToken, getCourses);
 router.get(
   "/:id",
   [
+    authenticateToken,
     param("id").isInt(),
     validateRequest,
-    authenticateToken,
   ],
   getCourseById
 );
 router.delete(
   "/:id",
   [
+    authenticateToken,
     param("id").isInt(),
     validateRequest,
-    authenticateToken,
   ],
   deleteCourse
 );
