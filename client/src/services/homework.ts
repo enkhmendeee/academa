@@ -21,3 +21,12 @@ export const deleteHomework = async (id: number, token: string) => {
     headers: { Authorization: `Bearer ${token}` },
   });
 };
+
+export const updateHomework = async (id: number, data: any, token: string) => {
+  const res = await axios.patch(
+    `http://localhost:3000/api/homeworks/${id}`,
+    data,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return res.data;
+};
