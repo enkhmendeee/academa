@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Menu, Typography, Avatar, Card, Row, Col, Button, List, Tag, Dropdown } from "antd";
+import { Layout, Menu, Typography, Card, Row, Col, Button, List, Tag, Dropdown } from "antd";
 import {
   HomeOutlined,
   BookOutlined,
