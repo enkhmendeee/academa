@@ -4,12 +4,14 @@ import { PlusOutlined, DeleteOutlined, BookOutlined, FileTextOutlined } from "@a
 import { getCourses, createCourse, deleteCourse } from "../services/course";
 import { getHomeworks, createHomework, deleteHomework } from "../services/homework";
 import { useAuth } from "../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 import LogoutButton from "../components/LogoutButton";
 
 const { Title, Text } = Typography;
 
 export default function Dashboard() {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
   const [homeworks, setHomeworks] = useState<any[]>([]);
   const [courseLoading, setCourseLoading] = useState(false);
@@ -115,7 +117,15 @@ export default function Dashboard() {
         {/* Courses Section */}
         <Card
           style={{ flex: 1, minWidth: 340, maxWidth: 420, borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: 'none' }}
-          title={<span><BookOutlined style={{ color: '#1976d2' }} /> <span style={{ color: '#1976d2' }}>Courses</span></span>}
+          title={
+            <Button
+              type="link"
+              style={{ padding: 0, height: 'auto', color: '#1976d2' }}
+              onClick={() => navigate('/courses')}
+            >
+              <BookOutlined style={{ color: '#1976d2' }} /> <span style={{ color: '#1976d2' }}>Courses</span>
+            </Button>
+          }
         >
           <Form form={courseForm} layout="vertical" onFinish={onAddCourse} style={{ marginBottom: 24 }}>
             <Form.Item name="name" rules={[{ required: true, message: 'Please enter course name!' }]}> 
