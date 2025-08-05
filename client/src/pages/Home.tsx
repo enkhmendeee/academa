@@ -464,7 +464,7 @@ export default function Home() {
                             <div style={{ textAlign: "right" }}>
                               <div>
                                 <Text type="secondary">
-                                  Due: {new Date(item.dueDate).toLocaleDateString()}
+                                  Due: {new Date(item.dueDate).toLocaleString()}
                                 </Text>
                               </div>
                               <Dropdown

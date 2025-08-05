@@ -216,6 +216,7 @@ export default function Homeworks() {
           aValue = a.grade || 0;
           bValue = b.grade || 0;
           break;
+        case "dueDate":
         default:
           // Default to dueDate sorting
           aValue = new Date(a.dueDate);
@@ -304,15 +305,15 @@ export default function Homeworks() {
       },
     },
     {
-      title: "Due Date/In",
+      title: "Due Date/Time",
       dataIndex: "dueDate",
       key: "dueDate",
       render: (date: string, record: any) => {
         const isEditing = editingHomework === record.id && editingField === 'dueDate';
         return isEditing ? (
           <Input
-            type="date"
-            defaultValue={date ? new Date(date).toISOString().split('T')[0] : ''}
+            type="datetime-local"
+            defaultValue={date ? new Date(date).toISOString().slice(0, 16) : ''}
             onPressEnter={(e: any) => handleUpdateHomeworkField(record.id, 'dueDate', e.target.value)}
             onBlur={() => setEditingHomework(null)}
             autoFocus
@@ -326,7 +327,7 @@ export default function Homeworks() {
               setEditingField('dueDate');
             }}
           >
-            {new Date(date).toLocaleDateString()}
+            {new Date(date).toLocaleString()}
           </Text>
         );
       },
@@ -869,13 +870,13 @@ export default function Homeworks() {
                           ))}
                         </Select>
                       </Form.Item>
-                      <Form.Item 
-                        name="dueDate" 
-                        rules={[{ required: true, message: 'Due date required!' }]}
-                        style={{ marginBottom: 0, width: 150 }}
-                      >
-                        <Input type="date" style={{ borderRadius: 8 }} />
-                      </Form.Item>
+                                <Form.Item 
+            name="dueDate" 
+            rules={[{ required: true, message: 'Due date required!' }]}
+            style={{ marginBottom: 0, width: 150 }}
+          >
+            <Input type="datetime-local" style={{ borderRadius: 8 }} />
+          </Form.Item>
                       <Form.Item 
                         name="status" 
                         initialValue="PENDING"

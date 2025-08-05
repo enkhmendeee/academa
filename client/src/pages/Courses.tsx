@@ -659,7 +659,7 @@ export default function Courses() {
                                   <Text strong style={{ fontSize: 12 }}>{homework.title}</Text>
                                   <br />
                                   <Text type="secondary" style={{ fontSize: 10 }}>
-                                    Due: {new Date(homework.dueDate).toLocaleDateString()}
+                                    Due: {new Date(homework.dueDate).toLocaleString()}
                                   </Text>
                                 </div>
                               </List.Item>

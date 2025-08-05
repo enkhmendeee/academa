@@ -149,7 +149,7 @@ export default function Dashboard() {
                 <div>
                   <Text strong>{item.title}</Text> <br />
                   <Text type="secondary">Course: {item.course?.name || item.courseId}</Text> <br />
-                  <Text type="secondary">Due: {item.dueDate ? new Date(item.dueDate).toLocaleDateString() : ''}</Text>
+                  <Text type="secondary">Due: {item.dueDate ? new Date(item.dueDate).toLocaleString() : ''}</Text>
                   {item.semester && <Text type="secondary" style={{ display: 'block', fontSize: '12px' }}>Semester: {item.semester}</Text>}
                 </div>
               </List.Item>
