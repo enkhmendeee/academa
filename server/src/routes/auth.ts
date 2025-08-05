@@ -16,9 +16,17 @@ router.post(
     body('email').isEmail(),
     body('password').isLength({ min: 6 }),
     body('name').isString().notEmpty(),
+    body('confirmPassword').custom((value, { req }) => {
+      console.log('confirmPassword validation:', { value, password: req.body.password });
+      if (value !== req.body.password) {
+        throw new Error('Password confirmation does not match password');
+      }
+      return true;
+    }),
     validateRequest,
   ],
   async (req: Request, res: Response) => {
+    console.log('Register endpoint called with body:', req.body);
     const { email, password, name } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
