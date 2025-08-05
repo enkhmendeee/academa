@@ -16,7 +16,7 @@ export default function Register() {
       const { token, user } = await registerService(values.username, values.email, values.password, values.confirmPassword);
       login(token, user);
       message.success('Registration successful!');
-      navigate("/dashboard");
+      navigate("/");
     } catch (err) {
       console.error("Registration error:", err);
       message.error('Registration failed. Please try again.');

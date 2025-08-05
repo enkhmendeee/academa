@@ -5,7 +5,6 @@ import {
   BookOutlined,
   FileTextOutlined,
   CalendarOutlined,
-  UserOutlined,
   SmileOutlined,
   DownOutlined,
   EditOutlined,
@@ -294,7 +293,9 @@ export default function Home() {
         
         {/* Profile Popup */}
         {profileVisible && (
-          <div 
+          <button 
+            type="button"
+            aria-label="Close profile popup"
             style={{
               position: 'fixed',
               top: 0,
@@ -305,7 +306,10 @@ export default function Home() {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              zIndex: 1000
+              zIndex: 1000,
+              cursor: 'pointer',
+              border: 'none',
+              padding: 0
             }}
             onClick={() => setProfileVisible(false)}
           >
@@ -388,7 +392,7 @@ export default function Home() {
                 </Button>
               </div>
             </Card>
-          </div>
+          </button>
         )}
         {/* Content */}
         <Content style={{ padding: 32, background: "#e3f2fd", minHeight: 0 }}>

@@ -16,7 +16,7 @@ export default function Login() {
       const { token, user } = await loginService(values.email, values.password);
       login(token, user);
       message.success('Login successful!');
-      navigate("/dashboard");
+      navigate("/");
     } catch (err) {
       console.error("Login error:", err);
       message.error('Login failed. Please check your credentials.');

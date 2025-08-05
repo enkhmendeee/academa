@@ -5,7 +5,6 @@ import {
   BookOutlined,
   FileTextOutlined,
   CalendarOutlined,
-  UserOutlined,
   SmileOutlined,
   PlusOutlined,
   EditOutlined,
@@ -566,7 +565,9 @@ export default function Homeworks() {
         
         {/* Profile Popup */}
         {profileVisible && (
-          <div 
+          <button 
+            type="button"
+            aria-label="Close profile popup"
             style={{
               position: 'fixed',
               top: 0,
@@ -577,7 +578,10 @@ export default function Homeworks() {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              zIndex: 1000
+              zIndex: 1000,
+              cursor: 'pointer',
+              border: 'none',
+              padding: 0
             }}
             onClick={() => setProfileVisible(false)}
           >
@@ -678,7 +682,7 @@ export default function Homeworks() {
                 </Button>
               </div>
             </Card>
-          </div>
+          </button>
         )}
         {/* Content */}
         <Content style={{ padding: 32, background: "#e3f2fd", minHeight: 0 }}>
@@ -692,59 +696,59 @@ export default function Homeworks() {
                   style={{ width: 200 }}
                   value={selectedSemester}
                   onChange={setSelectedSemester}
-                  dropdownRender={(menu) => (
-                    <div>
-                      {menu}
-                      <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
-                        {addingNewSemester ? (
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                            <Input
-                              size="small"
-                              placeholder="Enter semester name"
-                              value={newSemesterValue}
-                              onChange={(e) => setNewSemesterValue(e.target.value)}
-                              onPressEnter={handleAddNewSemester}
-                              autoFocus
-                              style={{ flex: 1 }}
-                            />
-                            <Button
-                              size="small"
-                              type="primary"
-                              onClick={handleAddNewSemester}
-                              style={{ background: '#1976d2', borderColor: '#1976d2' }}
-                            >
-                              Add
-                            </Button>
-                            <Button
-                              size="small"
-                              onClick={() => {
-                                setAddingNewSemester(false);
-                                setNewSemesterValue("");
-                              }}
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            type="text"
-                            size="small"
-                            icon={<PlusOutlined />}
-                            onClick={() => setAddingNewSemester(true)}
-                            style={{ width: '100%', color: '#1976d2' }}
-                          >
-                            Add New Semester
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                >
-                  <Option value="all">All Semesters</Option>
-                  {semesters.map(semester => (
-                    <Option key={semester} value={semester}>{semester}</Option>
-                  ))}
-                </Select>
+                  options={[
+                    { value: "all", label: "All Semesters" },
+                    ...semesters.map(semester => ({ value: semester, label: semester }))
+                  ]}
+
+                  onOpenChange={(open) => {
+                    if (!open) {
+                      setAddingNewSemester(false);
+                      setNewSemesterValue("");
+                    }
+                  }}
+                />
+                {addingNewSemester && (
+                  <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <Input
+                      size="small"
+                      placeholder="Enter semester name"
+                      value={newSemesterValue}
+                      onChange={(e) => setNewSemesterValue(e.target.value)}
+                      onPressEnter={handleAddNewSemester}
+                      autoFocus
+                      style={{ flex: 1 }}
+                    />
+                    <Button
+                      size="small"
+                      type="primary"
+                      onClick={handleAddNewSemester}
+                      style={{ background: '#1976d2', borderColor: '#1976d2' }}
+                    >
+                      Add
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        setAddingNewSemester(false);
+                        setNewSemesterValue("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+                {!addingNewSemester && (
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={() => setAddingNewSemester(true)}
+                    style={{ marginLeft: 8, color: '#1976d2' }}
+                  >
+                    Add New Semester
+                  </Button>
+                )}
               </Row>
             </Col>
 
