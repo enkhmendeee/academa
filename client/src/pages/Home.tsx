@@ -28,6 +28,9 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
+  const [profileVisible, setProfileVisible] = useState(false);
+
+  // Common semester options
 
 
   // Fetch data
@@ -270,16 +273,106 @@ export default function Home() {
             )}
           </div>
           <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
-            <Text style={{ fontWeight: 500, color: "#1976d2" }}>Hello, {user?.username || "User"}</Text>
             <Button
-              type="link"
-              icon={<UserOutlined style={{ color: "#1976d2" }} />}
-              style={{ color: "#1976d2", fontWeight: 500 }}
+              type="text"
+              style={{ 
+                color: "#1976d2", 
+                fontWeight: 500, 
+                fontSize: 16,
+                padding: "8px 16px",
+                borderRadius: 8,
+                border: "1px solid #e3f2fd",
+                background: "#f8fbff"
+              }}
+              onClick={() => setProfileVisible(true)}
             >
-              My Profile
+              {user?.username || "User"}
             </Button>
           </div>
         </Header>
+        
+        {/* Profile Popup */}
+        {profileVisible && (
+          <div 
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 1000
+            }}
+            onClick={() => setProfileVisible(false)}
+          >
+            <Card
+              style={{
+                width: 400,
+                borderRadius: 12,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                border: 'none'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                <div style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: '50%',
+                  background: '#e3f2fd',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                  fontSize: 32,
+                  color: '#1976d2',
+                  fontWeight: 'bold'
+                }}>
+                  {user?.username?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <Title level={3} style={{ color: '#1976d2', margin: 0 }}>
+                  {user?.username || 'User'}
+                </Title>
+                <Text type="secondary">{user?.email}</Text>
+              </div>
+              
+              <div style={{ marginBottom: 24 }}>
+                <Title level={4} style={{ color: '#1976d2', marginBottom: 12 }}>
+                  Profile Information
+                </Title>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text strong>Username:</Text>
+                  <Text>{user?.username || 'N/A'}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text strong>Email:</Text>
+                  <Text>{user?.email || 'N/A'}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text strong>Motto:</Text>
+                  <Text>{user?.motto || 'No motto set'}</Text>
+                </div>
+              </div>
+              
+              <div style={{ textAlign: 'center' }}>
+                <Button
+                  type="primary"
+                  onClick={() => setProfileVisible(false)}
+                  style={{
+                    borderRadius: 8,
+                    background: '#1976d2',
+                    borderColor: '#1976d2'
+                  }}
+                >
+                  Close
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
         {/* Content */}
         <Content style={{ padding: 32, background: "#e3f2fd", minHeight: 0 }}>
           <Row gutter={[32, 32]} justify="center">

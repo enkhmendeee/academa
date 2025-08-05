@@ -10,6 +10,7 @@ import {
   EditOutlined,
   CheckOutlined,
   DeleteOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -32,6 +33,10 @@ export default function Courses() {
   const [editingCourse, setEditingCourse] = useState<number | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [courseEditValues, setCourseEditValues] = useState<{ [key: number]: { name: string; description: string } }>({});
+  const [addingNewSemester, setAddingNewSemester] = useState(false);
+  const [newSemesterValue, setNewSemesterValue] = useState("");
+  const [allSemesters, setAllSemesters] = useState<string[]>([]);
+  const [profileVisible, setProfileVisible] = useState(false);
 
   // Handle navigation state from Homeworks page
   useEffect(() => {
@@ -120,6 +125,18 @@ export default function Courses() {
     }
   };
 
+  // Handle adding new semester
+  const handleAddNewSemester = () => {
+    if (newSemesterValue.trim()) {
+      const newSemester = newSemesterValue.trim();
+      setSelectedSemester(newSemester);
+      setAllSemesters(prev => [...prev, newSemester]);
+      setAddingNewSemester(false);
+      setNewSemesterValue("");
+      message.success("New semester added!");
+    }
+  };
+
   // Navigation handler
   const handleMenuClick = ({ key }: { key: string }) => {
     switch (key) {
@@ -139,7 +156,10 @@ export default function Courses() {
   };
 
   // Get unique semesters from courses
-  const semesters = Array.from(new Set(courses.map(course => course.semester).filter(Boolean)));
+  const existingSemesters = Array.from(new Set(courses.map(course => course.semester).filter(Boolean)));
+  
+  // Combine existing semesters with newly added ones
+  const semesters = Array.from(new Set([...existingSemesters, ...allSemesters]));
 
   // Filter courses by selected semester
   const filteredCourses = selectedSemester === "all" 
@@ -253,16 +273,124 @@ export default function Courses() {
             )}
           </div>
           <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
-            <Text style={{ fontWeight: 500, color: "#1976d2" }}>Hello, {user?.username || "User"}</Text>
             <Button
-              type="link"
-              icon={<UserOutlined style={{ color: "#1976d2" }} />}
-              style={{ color: "#1976d2", fontWeight: 500 }}
+              type="text"
+              style={{ 
+                color: "#1976d2", 
+                fontWeight: 500, 
+                fontSize: 16,
+                padding: "8px 16px",
+                borderRadius: 8,
+                border: "1px solid #e3f2fd",
+                background: "#f8fbff"
+              }}
+              onClick={() => setProfileVisible(true)}
             >
-              My Profile
+              {user?.username || "User"}
             </Button>
           </div>
         </Header>
+        
+        {/* Profile Popup */}
+        {profileVisible && (
+          <div 
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 1000
+            }}
+            onClick={() => setProfileVisible(false)}
+          >
+            <Card
+              style={{
+                width: 400,
+                borderRadius: 12,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                border: 'none'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                <div style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: '50%',
+                  background: '#e3f2fd',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                  fontSize: 32,
+                  color: '#1976d2',
+                  fontWeight: 'bold'
+                }}>
+                  {user?.username?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <Title level={3} style={{ color: '#1976d2', margin: 0 }}>
+                  {user?.username || 'User'}
+                </Title>
+                <Text type="secondary">{user?.email}</Text>
+              </div>
+              
+              <div style={{ marginBottom: 24 }}>
+                <Title level={4} style={{ color: '#1976d2', marginBottom: 12 }}>
+                  Profile Information
+                </Title>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text strong>Username:</Text>
+                  <Text>{user?.username || 'N/A'}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text strong>Email:</Text>
+                  <Text>{user?.email || 'N/A'}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text strong>Motto:</Text>
+                  <Text>{user?.motto || 'No motto set'}</Text>
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: 24 }}>
+                <Title level={4} style={{ color: '#1976d2', marginBottom: 12 }}>
+                  Semester Information
+                </Title>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text strong>Current Semester:</Text>
+                  <Text>{selectedSemester}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text strong>Total Semesters:</Text>
+                  <Text>{semesters.length}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text strong>Available Semesters:</Text>
+                  <Text>{semesters.join(', ')}</Text>
+                </div>
+              </div>
+              
+              <div style={{ textAlign: 'center' }}>
+                <Button
+                  type="primary"
+                  onClick={() => setProfileVisible(false)}
+                  style={{
+                    borderRadius: 8,
+                    background: '#1976d2',
+                    borderColor: '#1976d2'
+                  }}
+                >
+                  Close
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
         {/* Content */}
         <Content style={{ padding: 32, background: "#e3f2fd", minHeight: 0 }}>
           <Row gutter={[32, 32]} justify="center">
@@ -275,6 +403,53 @@ export default function Courses() {
                   style={{ width: 200 }}
                   value={selectedSemester}
                   onChange={setSelectedSemester}
+                  dropdownRender={(menu) => (
+                    <div>
+                      {menu}
+                      <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
+                        {addingNewSemester ? (
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <Input
+                              size="small"
+                              placeholder="Enter semester name"
+                              value={newSemesterValue}
+                              onChange={(e) => setNewSemesterValue(e.target.value)}
+                              onPressEnter={handleAddNewSemester}
+                              autoFocus
+                              style={{ flex: 1 }}
+                            />
+                            <Button
+                              size="small"
+                              type="primary"
+                              onClick={handleAddNewSemester}
+                              style={{ background: '#1976d2', borderColor: '#1976d2' }}
+                            >
+                              Add
+                            </Button>
+                            <Button
+                              size="small"
+                              onClick={() => {
+                                setAddingNewSemester(false);
+                                setNewSemesterValue("");
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<PlusOutlined />}
+                            onClick={() => setAddingNewSemester(true)}
+                            style={{ width: '100%', color: '#1976d2' }}
+                          >
+                            Add New Semester
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 >
                   <Option value="all">All Semesters</Option>
                   {semesters.map(semester => (

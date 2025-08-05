@@ -131,6 +131,10 @@ export default function Homeworks() {
   const [addingCourse, setAddingCourse] = useState(false);
   const [editingHomework, setEditingHomework] = useState<number | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
+  const [addingNewSemester, setAddingNewSemester] = useState(false);
+  const [newSemesterValue, setNewSemesterValue] = useState("");
+  const [allSemesters, setAllSemesters] = useState<string[]>([]);
+  const [profileVisible, setProfileVisible] = useState(false);
 
   // Fetch data
   const fetchData = async () => {
@@ -199,6 +203,18 @@ export default function Homeworks() {
     setAddingCourse(false);
   };
 
+  // Handle adding new semester
+  const handleAddNewSemester = () => {
+    if (newSemesterValue.trim()) {
+      const newSemester = newSemesterValue.trim();
+      setSelectedSemester(newSemester);
+      setAllSemesters(prev => [...prev, newSemester]);
+      setAddingNewSemester(false);
+      setNewSemesterValue("");
+      message.success("New semester added!");
+    }
+  };
+
   // Update homework field
   const handleUpdateHomeworkField = async (homeworkId: number, field: string, value: any) => {
     if (!token) return;
@@ -249,7 +265,10 @@ export default function Homeworks() {
   };
 
   // Get unique semesters from homeworks
-  const semesters = Array.from(new Set(homeworks.map(hw => hw.semester || hw.course?.semester).filter(Boolean)));
+  const existingSemesters = Array.from(new Set(homeworks.map(hw => hw.semester || hw.course?.semester).filter(Boolean)));
+  
+  // Combine existing semesters with newly added ones
+  const semesters = Array.from(new Set([...existingSemesters, ...allSemesters]));
 
   // Filter homeworks by selected semester
   const filteredHomeworks = selectedSemester === "all" 
@@ -526,16 +545,124 @@ export default function Homeworks() {
             )}
           </div>
           <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
-            <Text style={{ fontWeight: 500, color: "#1976d2" }}>Hello, {user?.username || "User"}</Text>
             <Button
-              type="link"
-              icon={<UserOutlined style={{ color: "#1976d2" }} />}
-              style={{ color: "#1976d2", fontWeight: 500 }}
+              type="text"
+              style={{ 
+                color: "#1976d2", 
+                fontWeight: 500, 
+                fontSize: 16,
+                padding: "8px 16px",
+                borderRadius: 8,
+                border: "1px solid #e3f2fd",
+                background: "#f8fbff"
+              }}
+              onClick={() => setProfileVisible(true)}
             >
-              My Profile
+              {user?.username || "User"}
             </Button>
           </div>
         </Header>
+        
+        {/* Profile Popup */}
+        {profileVisible && (
+          <div 
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 1000
+            }}
+            onClick={() => setProfileVisible(false)}
+          >
+            <Card
+              style={{
+                width: 400,
+                borderRadius: 12,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                border: 'none'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                <div style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: '50%',
+                  background: '#e3f2fd',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                  fontSize: 32,
+                  color: '#1976d2',
+                  fontWeight: 'bold'
+                }}>
+                  {user?.username?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <Title level={3} style={{ color: '#1976d2', margin: 0 }}>
+                  {user?.username || 'User'}
+                </Title>
+                <Text type="secondary">{user?.email}</Text>
+              </div>
+              
+              <div style={{ marginBottom: 24 }}>
+                <Title level={4} style={{ color: '#1976d2', marginBottom: 12 }}>
+                  Profile Information
+                </Title>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text strong>Username:</Text>
+                  <Text>{user?.username || 'N/A'}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text strong>Email:</Text>
+                  <Text>{user?.email || 'N/A'}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text strong>Motto:</Text>
+                  <Text>{user?.motto || 'No motto set'}</Text>
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: 24 }}>
+                <Title level={4} style={{ color: '#1976d2', marginBottom: 12 }}>
+                  Semester Information
+                </Title>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text strong>Current Semester:</Text>
+                  <Text>{selectedSemester}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text strong>Total Semesters:</Text>
+                  <Text>{semesters.length}</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text strong>Available Semesters:</Text>
+                  <Text>{semesters.join(', ')}</Text>
+                </div>
+              </div>
+              
+              <div style={{ textAlign: 'center' }}>
+                <Button
+                  type="primary"
+                  onClick={() => setProfileVisible(false)}
+                  style={{
+                    borderRadius: 8,
+                    background: '#1976d2',
+                    borderColor: '#1976d2'
+                  }}
+                >
+                  Close
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
         {/* Content */}
         <Content style={{ padding: 32, background: "#e3f2fd", minHeight: 0 }}>
           <Row gutter={[32, 32]} justify="center">
@@ -548,6 +675,53 @@ export default function Homeworks() {
                   style={{ width: 200 }}
                   value={selectedSemester}
                   onChange={setSelectedSemester}
+                  dropdownRender={(menu) => (
+                    <div>
+                      {menu}
+                      <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
+                        {addingNewSemester ? (
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <Input
+                              size="small"
+                              placeholder="Enter semester name"
+                              value={newSemesterValue}
+                              onChange={(e) => setNewSemesterValue(e.target.value)}
+                              onPressEnter={handleAddNewSemester}
+                              autoFocus
+                              style={{ flex: 1 }}
+                            />
+                            <Button
+                              size="small"
+                              type="primary"
+                              onClick={handleAddNewSemester}
+                              style={{ background: '#1976d2', borderColor: '#1976d2' }}
+                            >
+                              Add
+                            </Button>
+                            <Button
+                              size="small"
+                              onClick={() => {
+                                setAddingNewSemester(false);
+                                setNewSemesterValue("");
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<PlusOutlined />}
+                            onClick={() => setAddingNewSemester(true)}
+                            style={{ width: '100%', color: '#1976d2' }}
+                          >
+                            Add New Semester
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 >
                   <Option value="all">All Semesters</Option>
                   {semesters.map(semester => (
@@ -560,112 +734,105 @@ export default function Homeworks() {
             {/* Course Creation Section */}
             <Col span={24}>
               <Card
-                title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Add New Course</span>}
+                title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Add a New Course</span>}
                 style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)", marginBottom: 24 }}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <Form 
-                    form={courseForm} 
-                    layout="inline" 
-                    onFinish={handleAddCourse}
-                    style={{ display: 'flex', gap: 16, alignItems: 'center' }}
-                  >
-                    <Form.Item 
-                      name="name" 
-                      rules={[{ required: true, message: 'Course name required!' }]}
-                      style={{ marginBottom: 0, flex: 1 }}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <Form 
+                      form={courseForm} 
+                      layout="inline" 
+                      onFinish={handleAddCourse}
+                      style={{ display: 'flex', gap: 16, alignItems: 'center' }}
                     >
-                      <Input 
-                        placeholder="Enter course name" 
-                        style={{ borderRadius: 8, width: 300 }}
-                        size="large"
-                      />
-                    </Form.Item>
-                    <Form.Item style={{ marginBottom: 0 }}>
-                      <Button 
-                        type="primary" 
-                        htmlType="submit" 
-                        icon={<PlusOutlined />}
-                        loading={addingCourse}
-                        style={{ 
-                          borderRadius: 8, 
-                          background: '#1976d2', 
-                          borderColor: '#1976d2',
-                          height: 40
-                        }}
-                        onClick={() => {
-                          // Navigate to courses page after adding course
-                          setTimeout(() => {
-                            navigate('/courses', { 
-                              state: { 
-                                selectedSemester: selectedSemester 
-                              } 
-                            });
-                          }, 1000); // Small delay to allow the course to be added first
-                        }}
+                      <Form.Item 
+                        name="name" 
+                        rules={[{ required: true, message: 'Course name required!' }]}
+                        style={{ marginBottom: 0 }}
                       >
-                        Add Course
-                      </Button>
-                    </Form.Item>
-                  </Form>
-                  
-                  {/* Current Semester Courses */}
-                  {currentSemesterCourses.length > 0 && (
-                    <div>
-                      <Text type="secondary" style={{ fontSize: 12, marginBottom: 8, display: 'block' }}>
-                        Current semester courses:
-                      </Text>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                        {currentSemesterCourses.map((course, index) => {
-                          const colors = [
-                            { bg: '#e3f2fd', border: '#1976d2', text: '#1976d2' },
-                            { bg: '#f3e5f5', border: '#7b1fa2', text: '#7b1fa2' },
-                            { bg: '#e8f5e8', border: '#388e3c', text: '#388e3c' },
-                            { bg: '#fff3e0', border: '#f57c00', text: '#f57c00' },
-                            { bg: '#fce4ec', border: '#c2185b', text: '#c2185b' },
-                            { bg: '#e0f2f1', border: '#00695c', text: '#00695c' }
-                          ];
-                          const color = colors[index % colors.length];
-                          return (
-                            <Tag
-                              key={course.id}
-                              style={{ 
-                                borderRadius: 16, 
-                                padding: '6px 14px',
-                                fontSize: 13,
-                                fontWeight: 500,
-                                border: `2px solid ${color.border}`,
-                                background: color.bg,
-                                color: color.text,
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease'
-                              }}
-                              onClick={() => {
-                                // Navigate to courses page with the selected course focused
-                                navigate('/courses', { 
-                                  state: { 
-                                    focusedCourseId: course.id,
-                                    selectedSemester: selectedSemester 
-                                  } 
-                                });
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'scale(1.05)';
-                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'scale(1)';
-                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                              }}
-                            >
-                              {course.name}
-                            </Tag>
-                          );
-                        })}
+                        <Input 
+                          placeholder="Enter course name" 
+                          style={{ borderRadius: 8, width: 300 }}
+                          size="large"
+                        />
+                      </Form.Item>
+                      
+                      <Form.Item style={{ marginBottom: 0 }}>
+                        <Button 
+                          type="primary" 
+                          htmlType="submit" 
+                          icon={<PlusOutlined />}
+                          loading={addingCourse}
+                          style={{ 
+                            borderRadius: 8, 
+                            background: '#1976d2', 
+                            borderColor: '#1976d2',
+                            height: 40
+                          }}
+                        >
+                          Add Course
+                        </Button>
+                      </Form.Item>
+                    </Form>
+                    
+                    {/* Current Semester Courses */}
+                    {currentSemesterCourses.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                          Current:
+                        </Text>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          {currentSemesterCourses.map((course, index) => {
+                            const colors = [
+                              { bg: '#e3f2fd', border: '#1976d2', text: '#1976d2' },
+                              { bg: '#f3e5f5', border: '#7b1fa2', text: '#7b1fa2' },
+                              { bg: '#e8f5e8', border: '#388e3c', text: '#388e3c' },
+                              { bg: '#fff3e0', border: '#f57c00', text: '#f57c00' },
+                              { bg: '#fce4ec', border: '#c2185b', text: '#c2185b' },
+                              { bg: '#e0f2f1', border: '#00695c', text: '#00695c' }
+                            ];
+                            const color = colors[index % colors.length];
+                            return (
+                              <Tag
+                                key={course.id}
+                                style={{ 
+                                  borderRadius: 16, 
+                                  padding: '6px 14px',
+                                  fontSize: 13,
+                                  fontWeight: 500,
+                                  border: `2px solid ${color.border}`,
+                                  background: color.bg,
+                                  color: color.text,
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                onClick={() => {
+                                  // Navigate to courses page with the selected course focused
+                                  navigate('/courses', { 
+                                    state: { 
+                                      focusedCourseId: course.id,
+                                      selectedSemester: selectedSemester 
+                                    } 
+                                  });
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = 'scale(1.05)';
+                                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = 'scale(1)';
+                                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                                }}
+                              >
+                                {course.name}
+                              </Tag>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </Card>
             </Col>
@@ -673,6 +840,7 @@ export default function Homeworks() {
             {/* Homework Table */}
             <Col span={24}>
               <Card
+                title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Add a New Homework</span>}
                 style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}
               >
                 <Table

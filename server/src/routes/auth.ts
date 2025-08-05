@@ -15,9 +15,8 @@ router.post(
   [
     body('email').isEmail(),
     body('password').isLength({ min: 6 }),
-    body('name').isString().notEmpty(),
+    body('username').isString().notEmpty(),
     body('confirmPassword').custom((value, { req }) => {
-      console.log('confirmPassword validation:', { value, password: req.body.password });
       if (value !== req.body.password) {
         throw new Error('Password confirmation does not match password');
       }
@@ -26,8 +25,11 @@ router.post(
     validateRequest,
   ],
   async (req: Request, res: Response) => {
-    console.log('Register endpoint called with body:', req.body);
-    const { email, password, name } = req.body;
+    const { email, password, username } = req.body;
+
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) return res.status(400).json({ error: 'Email already registered' });
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     try {
@@ -35,11 +37,11 @@ router.post(
         data: {
           email,
           password: hashedPassword,
-          name,
+          username,
         },
       });
       const token = jwt.sign(
-        { id: user.id, username: user.name, email: user.email },
+        { id: user.id, username: user.username, email: user.email },
         process.env.JWT_SECRET!,
         { expiresIn: "1h" }
       );
@@ -47,7 +49,7 @@ router.post(
         token,
         user: {
           id: user.id,
-          username: user.name,
+          username: user.username,
           email: user.email,
           motto: user.motto,
         },
@@ -76,7 +78,7 @@ router.post(
     if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
     const token = jwt.sign(
-      { id: user.id, username: user.name, email: user.email },
+      { id: user.id, username: user.username, email: user.email },
       process.env.JWT_SECRET!,
       { expiresIn: "1h" }
     );
@@ -85,7 +87,7 @@ router.post(
       token,
       user: {
         id: user.id,
-        username: user.name,
+        username: user.username,
         email: user.email,
         motto: user.motto,
       },
@@ -117,7 +119,7 @@ router.patch(
         data: { motto },
         select: {
           id: true,
-          name: true,
+          username: true,
           email: true,
           motto: true,
         },

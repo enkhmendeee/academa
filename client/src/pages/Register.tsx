@@ -11,9 +11,9 @@ export default function Register() {
   const navigate = useNavigate();
   const [form] = Form.useForm();
 
-  const handleRegister = async (values: { name: string; email: string; password: string; confirmPassword: string }) => {
+  const handleRegister = async (values: { username: string; email: string; password: string; confirmPassword: string }) => {
     try {
-      const { token, user } = await registerService(values.name, values.email, values.password, values.confirmPassword);
+      const { token, user } = await registerService(values.username, values.email, values.password, values.confirmPassword);
       login(token, user);
       message.success('Registration successful!');
       navigate("/dashboard");
@@ -56,12 +56,12 @@ export default function Register() {
             size="large"
           >
             <Form.Item
-              name="name"
-              rules={[{ required: true, message: 'Please enter your name!' }]}
+              name="username"
+              rules={[{ required: true, message: 'Please enter your username!' }]}
             >
               <Input
                 prefix={<UserOutlined style={{ color: '#1976d2' }} />}
-                placeholder="Full Name"
+                placeholder="Username"
                 style={{ borderRadius: '8px' }}
               />
             </Form.Item>
