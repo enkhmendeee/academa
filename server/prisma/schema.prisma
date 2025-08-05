@@ -28,6 +28,7 @@ model Course {
   id          Int     @id @default(autoincrement())
   name        String
   description String?
+  semester    String?
   userId      Int
   user        User    @relation(fields: [userId], references: [id])
   homeworks   Homework[]
@@ -46,6 +47,7 @@ model Homework {
   title       String
   description String?
   dueDate     DateTime
+  semester    String?
   course      Course  @relation(fields: [courseId], references: [id])
   courseId    Int
   user        User    @relation(fields: [userId], references: [id])
