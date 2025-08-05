@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Menu, Typography, Card, Row, Col, Button, List, Select, Input, message, Form } from "antd";
+import { Layout, Menu, Typography, Card, Row, Col, Button, List, Select, Input, message } from "antd";
 import {
   HomeOutlined,
   BookOutlined,
@@ -7,13 +7,12 @@ import {
   CalendarOutlined,
   UserOutlined,
   SmileOutlined,
-  PlusOutlined,
   EditOutlined,
   CheckOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { getCourses, createCourse } from "../services/course";
+import { getCourses } from "../services/course";
 import { getHomeworks } from "../services/homework";
 import { updateProfile } from "../services/auth";
 
@@ -28,8 +27,6 @@ export default function Courses() {
   const [homeworks, setHomeworks] = useState<any[]>([]);
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
-  const [courseForm] = Form.useForm();
-  const [addingCourse, setAddingCourse] = useState(false);
 
   // Common semester options
   const semesterOptions = [
@@ -70,21 +67,6 @@ export default function Courses() {
     } catch (error) {
       message.error("Failed to update motto");
     }
-  };
-
-  // Add course
-  const handleAddCourse = async (values: { name: string }) => {
-    if (!token) return;
-    setAddingCourse(true);
-    try {
-      await createCourse(values.name, token, selectedSemester);
-      message.success("Course added successfully!");
-      courseForm.resetFields();
-      fetchData();
-    } catch (error) {
-      message.error("Failed to add course");
-    }
-    setAddingCourse(false);
   };
 
   // Navigation handler
@@ -152,7 +134,7 @@ export default function Courses() {
             Courses
           </Menu.Item>
           <Menu.Item key="homeworks" icon={<FileTextOutlined style={{ color: "#1976d2" }} />}>
-            Homeworks
+            Homeworks & Courses
           </Menu.Item>
           <Menu.Item key="exams" icon={<CalendarOutlined style={{ color: "#1976d2" }} />}>
             Exams
@@ -282,139 +264,103 @@ export default function Courses() {
             {/* Course Cards */}
             <Col span={24}>
               <Row gutter={[24, 24]} justify="center">
-                {filteredCourses.map((course, index) => (
-                  <Col key={course.id} xs={24} sm={12} md={8} lg={6}>
-                    <Card
-                      title={
-                        <div style={{ 
-                          color: "#1976d2", 
-                          fontWeight: 600, 
-                          fontSize: 16,
-                          textAlign: "center"
-                        }}>
-                          {course.name}
-                        </div>
-                      }
-                      style={{ 
-                        borderRadius: 12, 
-                        border: "none", 
-                        boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-                        height: 300,
-                        display: "flex",
-                        flexDirection: "column"
-                      }}
-                      styles={{
-                        body: {
-                          flex: 1,
-                          padding: "12px 16px",
+                {filteredCourses.length > 0 ? (
+                  filteredCourses.map((course, index) => (
+                    <Col key={course.id} xs={24} sm={12} md={8} lg={6}>
+                      <Card
+                        title={
+                          <div style={{ 
+                            color: "#1976d2", 
+                            fontWeight: 600, 
+                            fontSize: 16,
+                            textAlign: "center"
+                          }}>
+                            {course.name}
+                          </div>
+                        }
+                        style={{ 
+                          borderRadius: 12, 
+                          border: "none", 
+                          boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
+                          height: 300,
                           display: "flex",
                           flexDirection: "column"
-                        }
+                        }}
+                        styles={{
+                          body: {
+                            flex: 1,
+                            padding: "12px 16px",
+                            display: "flex",
+                            flexDirection: "column"
+                          }
+                        }}
+                      >
+                        <div style={{ 
+                          flex: 1, 
+                          overflowY: "auto",
+                          border: "1px solid #f0f0f0",
+                          borderRadius: 8,
+                          padding: 8,
+                          background: "#fafafa"
+                        }}>
+                          <List
+                            size="small"
+                            dataSource={getHomeworksForCourse(course.id)}
+                            renderItem={(homework) => (
+                              <List.Item
+                                key={homework.id}
+                                style={{ 
+                                  padding: "4px 8px",
+                                  border: "none",
+                                  background: "transparent"
+                                }}
+                              >
+                                <div style={{ width: "100%" }}>
+                                  <Text strong style={{ fontSize: 12 }}>{homework.title}</Text>
+                                  <br />
+                                  <Text type="secondary" style={{ fontSize: 10 }}>
+                                    Due: {new Date(homework.dueDate).toLocaleDateString()}
+                                  </Text>
+                                </div>
+                              </List.Item>
+                            )}
+                            locale={{ emptyText: "No assignments" }}
+                          />
+                        </div>
+                      </Card>
+                    </Col>
+                  ))
+                ) : (
+                  <Col span={24}>
+                    <Card
+                      style={{ 
+                        borderRadius: 12, 
+                        border: "2px dashed #d9d9d9", 
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
+                        background: "#fafafa",
+                        textAlign: "center",
+                        padding: "40px"
                       }}
                     >
-                      <div style={{ 
-                        flex: 1, 
-                        overflowY: "auto",
-                        border: "1px solid #f0f0f0",
-                        borderRadius: 8,
-                        padding: 8,
-                        background: "#fafafa"
-                      }}>
-                        <List
-                          size="small"
-                          dataSource={getHomeworksForCourse(course.id)}
-                          renderItem={(homework) => (
-                            <List.Item
-                              key={homework.id}
-                              style={{ 
-                                padding: "4px 8px",
-                                border: "none",
-                                background: "transparent"
-                              }}
-                            >
-                              <div style={{ width: "100%" }}>
-                                <Text strong style={{ fontSize: 12 }}>{homework.title}</Text>
-                                <br />
-                                <Text type="secondary" style={{ fontSize: 10 }}>
-                                  Due: {new Date(homework.dueDate).toLocaleDateString()}
-                                </Text>
-                              </div>
-                            </List.Item>
-                          )}
-                          locale={{ emptyText: "No assignments" }}
-                        />
-                      </div>
+                      <BookOutlined style={{ fontSize: 48, color: "#1976d2", marginBottom: 16 }} />
+                      <Title level={4} style={{ color: "#1976d2", marginBottom: 8 }}>No Courses Yet</Title>
+                      <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
+                        Create your first course to get started with homework management
+                      </Text>
+                      <Button 
+                        type="primary" 
+                        onClick={() => navigate("/homeworks")}
+                        style={{ 
+                          borderRadius: 8, 
+                          background: '#1976d2', 
+                          borderColor: '#1976d2'
+                        }}
+                      >
+                        Go to Homeworks Page
+                      </Button>
                     </Card>
                   </Col>
-                ))}
-                
-                {/* Add New Course Card */}
-                <Col xs={24} sm={12} md={8} lg={6}>
-                  <Card
-                    title={
-                      <div style={{ 
-                        color: "#1976d2", 
-                        fontWeight: 600, 
-                        fontSize: 16,
-                        textAlign: "center"
-                      }}>
-                        Add New Course
-                      </div>
-                    }
-                    style={{ 
-                      borderRadius: 12, 
-                      border: "none", 
-                      boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-                      height: 300,
-                      display: "flex",
-                      flexDirection: "column"
-                    }}
-                    styles={{
-                      body: {
-                        flex: 1,
-                        padding: "12px 16px",
-                        display: "flex",
-                        flexDirection: "column"
-                      }
-                    }}
-                  >
-                    <Form 
-                      form={courseForm} 
-                      layout="vertical" 
-                      onFinish={handleAddCourse}
-                      style={{ height: "100%", display: "flex", flexDirection: "column" }}
-                    >
-                      <Form.Item 
-                        name="name" 
-                        rules={[{ required: true, message: 'Please enter course name!' }]}
-                        style={{ flex: 1 }}
-                      >
-                        <Input 
-                          placeholder="Course Name" 
-                          style={{ borderRadius: 8 }}
-                          size="large"
-                        />
-                      </Form.Item>
-                      <Form.Item style={{ marginBottom: 0 }}>
-                        <Button 
-                          type="primary" 
-                          htmlType="submit" 
-                          icon={<PlusOutlined />}
-                          loading={addingCourse}
-                          style={{ 
-                            width: '100%', 
-                            borderRadius: 8, 
-                            background: '#1976d2', 
-                            borderColor: '#1976d2',
-                            height: 40
-                          }}
-                        >
-                          Add Course
-                        </Button>
-                      </Form.Item>
-                    </Form>
-                  </Card>
-                </Col>
+                )}
               </Row>
             </Col>
           </Row>

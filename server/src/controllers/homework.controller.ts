@@ -19,7 +19,7 @@ export const getHomework = async (req: Request, res: Response) => {
 };
 
 export const createHomework = async (req: Request, res: Response) => {
-  const { title, description, dueDate, courseId, status, grade } = req.body;
+  const { title, description, dueDate, courseId, status, grade, semester } = req.body;
   const userId = req.user.id;
 
   const homework = await prisma.homework.create({
@@ -31,6 +31,7 @@ export const createHomework = async (req: Request, res: Response) => {
       userId,
       status,
       grade,
+      semester,
     },
   });
 
@@ -39,7 +40,7 @@ export const createHomework = async (req: Request, res: Response) => {
 
 export const updateHomework = async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-  const { title, description, dueDate, status, grade } = req.body;
+  const { title, description, dueDate, status, grade, semester } = req.body;
 
   const updated = await prisma.homework.update({
     where: { id },
@@ -49,6 +50,7 @@ export const updateHomework = async (req: Request, res: Response) => {
       dueDate: dueDate ? new Date(dueDate) : undefined,
       status,
       grade,
+      semester,
     },
   });
 

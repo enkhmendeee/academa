@@ -14,7 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { getHomeworks, createHomework } from "../services/homework";
-import { getCourses } from "../services/course";
+import { getCourses, createCourse } from "../services/course";
 import { updateProfile } from "../services/auth";
 
 const { Sider, Header, Content } = Layout;
@@ -31,6 +31,8 @@ export default function Homeworks() {
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
   const [homeworkForm] = Form.useForm();
   const [addingHomework, setAddingHomework] = useState(false);
+  const [courseForm] = Form.useForm();
+  const [addingCourse, setAddingCourse] = useState(false);
 
   // Common semester options
   const semesterOptions = [
@@ -88,6 +90,21 @@ export default function Homeworks() {
       message.error("Failed to add homework");
     }
     setAddingHomework(false);
+  };
+
+  // Add course
+  const handleAddCourse = async (values: { name: string }) => {
+    if (!token) return;
+    setAddingCourse(true);
+    try {
+      await createCourse(values.name, token, selectedSemester);
+      message.success("Course added successfully!");
+      courseForm.resetFields();
+      fetchData();
+    } catch (error) {
+      message.error("Failed to add course");
+    }
+    setAddingCourse(false);
   };
 
   // Navigation handler
@@ -222,7 +239,7 @@ export default function Homeworks() {
             Courses
           </Menu.Item>
           <Menu.Item key="homeworks" icon={<FileTextOutlined style={{ color: "#1976d2" }} />}>
-            Homeworks
+            Homeworks & Courses
           </Menu.Item>
           <Menu.Item key="exams" icon={<CalendarOutlined style={{ color: "#1976d2" }} />}>
             Exams
@@ -244,7 +261,10 @@ export default function Homeworks() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <Title level={2} style={{ color: "#1976d2", margin: 0 }}>Homeworks</Title>
+            <div>
+              <Title level={2} style={{ color: "#1976d2", margin: 0 }}>Homeworks</Title>
+              <Text type="secondary" style={{ fontSize: 12 }}>Create courses and manage homeworks</Text>
+            </div>
             <Text style={{ fontWeight: 500, color: "#1976d2" }}>Current Semester:</Text>
             <Select
               value={selectedSemester}
@@ -335,6 +355,49 @@ export default function Homeworks() {
                   ))}
                 </Select>
               </Row>
+            </Col>
+
+            {/* Course Creation Section */}
+            <Col span={24}>
+              <Card
+                title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Add New Course</span>}
+                style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)", marginBottom: 24 }}
+              >
+                <Form 
+                  form={courseForm} 
+                  layout="inline" 
+                  onFinish={handleAddCourse}
+                  style={{ display: 'flex', gap: 16, alignItems: 'center' }}
+                >
+                  <Form.Item 
+                    name="name" 
+                    rules={[{ required: true, message: 'Course name required!' }]}
+                    style={{ marginBottom: 0, flex: 1 }}
+                  >
+                    <Input 
+                      placeholder="Enter course name" 
+                      style={{ borderRadius: 8, width: 300 }}
+                      size="large"
+                    />
+                  </Form.Item>
+                  <Form.Item style={{ marginBottom: 0 }}>
+                    <Button 
+                      type="primary" 
+                      htmlType="submit" 
+                      icon={<PlusOutlined />}
+                      loading={addingCourse}
+                      style={{ 
+                        borderRadius: 8, 
+                        background: '#1976d2', 
+                        borderColor: '#1976d2',
+                        height: 40
+                      }}
+                    >
+                      Add Course
+                    </Button>
+                  </Form.Item>
+                </Form>
+              </Card>
             </Col>
 
             {/* Homework Table */}

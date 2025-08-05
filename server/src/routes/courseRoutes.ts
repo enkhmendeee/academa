@@ -16,8 +16,9 @@ router.post(
   [
     authenticateToken,
     body("name").isString().notEmpty(),
+    body("semester").optional().isString(),
     validateRequest,
-  ],
+  ],       
   createCourse
 );
 router.get("/", authenticateToken, getCourses);

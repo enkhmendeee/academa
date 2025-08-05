@@ -130,7 +130,7 @@ export default function Dashboard() {
               style={{ padding: 0, height: 'auto', color: '#1976d2' }}
               onClick={() => navigate('/homeworks')}
             >
-              <FileTextOutlined style={{ color: '#1976d2' }} /> <span style={{ color: '#1976d2' }}>Homeworks</span>
+              <FileTextOutlined style={{ color: '#1976d2' }} /> <span style={{ color: '#1976d2' }}>Homeworks & Courses</span>
             </Button>
           }
         >

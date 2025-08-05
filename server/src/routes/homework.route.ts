@@ -28,6 +28,7 @@ router.post(
     body("title").isString().notEmpty(),
     body("dueDate").isISO8601(),
     body("courseId").isInt(),
+    body("semester").optional().isString(),
     // Optionally: body("status").isIn(["PENDING", "IN_PROGRESS", "COMPLETED", "OVERDUE"]),
     validateRequest,
   ],
@@ -40,6 +41,7 @@ router.patch(
     body("title").optional().isString(),
     body("dueDate").optional().isISO8601(),
     body("status").optional().isIn(["PENDING", "IN_PROGRESS", "COMPLETED", "OVERDUE"]),
+    body("semester").optional().isString(),
     validateRequest,
   ],
   updateHomework
