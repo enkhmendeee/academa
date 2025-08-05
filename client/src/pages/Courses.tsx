@@ -65,6 +65,7 @@ export default function Courses() {
       setEditingMotto(false);
       message.success("Motto updated successfully!");
     } catch (error) {
+      console.error("Failed to update motto:", error);
       message.error("Failed to update motto");
     }
   };

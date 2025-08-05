@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo } from 'react';
 
 interface User {
   id: number;
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{
+    <AuthContext.Provider value={useMemo(() => ({
       token,
       user,
       loading,
@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       logout,
       selectedSemester,
       setSelectedSemester: updateSelectedSemester,
-    }}>
+    }), [token, user, loading, selectedSemester])}>
       {children}
     </AuthContext.Provider>
   );

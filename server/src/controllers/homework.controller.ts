@@ -33,6 +33,7 @@ export const createHomework = async (req: Request, res: Response) => {
       grade,
       semester,
     },
+    include: { course: true },
   });
 
   res.status(201).json(homework);
@@ -52,6 +53,7 @@ export const updateHomework = async (req: Request, res: Response) => {
       grade,
       semester,
     },
+    include: { course: true },
   });
 
   res.json(updated);
