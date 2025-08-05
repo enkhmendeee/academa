@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Menu, Typography, Card, Row, Col, Button, Table, Select, Input, message, Tag, Space } from "antd";
+import { Layout, Menu, Typography, Card, Row, Col, Button, Table, Select, Input, message, Tag, Space, Form } from "antd";
 import {
   HomeOutlined,
   BookOutlined,
@@ -13,7 +13,8 @@ import {
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { getHomeworks } from "../services/homework";
+import { getHomeworks, createHomework } from "../services/homework";
+import { getCourses } from "../services/course";
 import { updateProfile } from "../services/auth";
 
 const { Sider, Header, Content } = Layout;
@@ -21,21 +22,36 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 export default function Homeworks() {
-  const { token, user, login } = useAuth();
+  const { token, user, login, selectedSemester, setSelectedSemester } = useAuth();
   const navigate = useNavigate();
   const [homeworks, setHomeworks] = useState<any[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedSemester, setSelectedSemester] = useState<string>("all");
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
+  const [homeworkForm] = Form.useForm();
+  const [addingHomework, setAddingHomework] = useState(false);
+
+  // Common semester options
+  const semesterOptions = [
+    "Fall 2024",
+    "Spring 2025", 
+    "Summer 2025",
+    "Fall 2025",
+    "Spring 2026"
+  ];
 
   // Fetch data
   const fetchData = async () => {
     if (!token) return;
     setLoading(true);
     try {
-      const homeworksData = await getHomeworks(token);
+      const [homeworksData, coursesData] = await Promise.all([
+        getHomeworks(token),
+        getCourses(token)
+      ]);
       setHomeworks(homeworksData);
+      setCourses(coursesData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
     }
@@ -57,6 +73,21 @@ export default function Homeworks() {
     } catch (error) {
       message.error("Failed to update motto");
     }
+  };
+
+  // Add homework
+  const handleAddHomework = async (values: any) => {
+    if (!token) return;
+    setAddingHomework(true);
+    try {
+      await createHomework({ ...values, semester: selectedSemester }, token);
+      message.success("Homework added successfully!");
+      homeworkForm.resetFields();
+      fetchData();
+    } catch (error) {
+      message.error("Failed to add homework");
+    }
+    setAddingHomework(false);
   };
 
   // Navigation handler
@@ -212,7 +243,20 @@ export default function Homeworks() {
             height: 64,
           }}
         >
-          <Title level={2} style={{ color: "#1976d2", margin: 0 }}>Homeworks</Title>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Title level={2} style={{ color: "#1976d2", margin: 0 }}>Homeworks</Title>
+            <Text style={{ fontWeight: 500, color: "#1976d2" }}>Current Semester:</Text>
+            <Select
+              value={selectedSemester}
+              onChange={setSelectedSemester}
+              style={{ width: 180 }}
+              placeholder="Select semester"
+            >
+              {semesterOptions.map(semester => (
+                <Option key={semester} value={semester}>{semester}</Option>
+              ))}
+            </Select>
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Text style={{ fontWeight: 500, color: "#1976d2" }}>Hello, {user?.username || "User"}</Text>
             <Button
@@ -297,28 +341,104 @@ export default function Homeworks() {
             <Col span={24}>
               <Card
                 style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}
-                extra={
-                  <Button 
-                    type="primary" 
-                    icon={<PlusOutlined />}
-                    onClick={() => navigate("/dashboard")}
-                    style={{ background: "#1976d2", borderColor: "#1976d2" }}
-                  >
-                    Add New Homework
-                  </Button>
-                }
               >
                 <Table
                   columns={columns}
-                  dataSource={filteredHomeworks}
+                  dataSource={[
+                    ...filteredHomeworks,
+                    {
+                      key: 'add-row',
+                      isAddRow: true,
+                    }
+                  ]}
                   loading={loading}
                   rowKey="id"
-                  pagination={{
-                    pageSize: 10,
-                    showSizeChanger: true,
-                    showQuickJumper: true,
-                  }}
+                  pagination={false}
                   scroll={{ y: 400 }}
+                  components={{
+                    body: {
+                      row: (props: any) => {
+                        if (props.children[0]?.props?.children?.props?.isAddRow) {
+                          return (
+                            <tr>
+                              <td colSpan={6} style={{ padding: 0 }}>
+                                <div style={{ padding: '16px', background: '#fafafa', borderTop: '1px solid #f0f0f0' }}>
+                                  <Form 
+                                    form={homeworkForm} 
+                                    layout="inline" 
+                                    onFinish={handleAddHomework}
+                                    style={{ display: 'flex', gap: 8, alignItems: 'center' }}
+                                  >
+                                    <Form.Item 
+                                      name="title" 
+                                      rules={[{ required: true, message: 'Title required!' }]}
+                                      style={{ marginBottom: 0, flex: 1 }}
+                                    >
+                                      <Input placeholder="Homework Title" style={{ borderRadius: 8 }} />
+                                    </Form.Item>
+                                    <Form.Item 
+                                      name="courseId" 
+                                      rules={[{ required: true, message: 'Course required!' }]}
+                                      style={{ marginBottom: 0, width: 150 }}
+                                    >
+                                      <Select placeholder="Select Course" style={{ borderRadius: 8 }}>
+                                        {courses.map(c => (
+                                          <Select.Option key={c.id} value={c.id}>
+                                            {c.name}
+                                          </Select.Option>
+                                        ))}
+                                      </Select>
+                                    </Form.Item>
+                                    <Form.Item 
+                                      name="dueDate" 
+                                      rules={[{ required: true, message: 'Due date required!' }]}
+                                      style={{ marginBottom: 0, width: 150 }}
+                                    >
+                                      <Input type="date" style={{ borderRadius: 8 }} />
+                                    </Form.Item>
+                                    <Form.Item 
+                                      name="status" 
+                                      initialValue="PENDING"
+                                      style={{ marginBottom: 0, width: 120 }}
+                                    >
+                                      <Select style={{ borderRadius: 8 }}>
+                                        <Select.Option value="PENDING">Pending</Select.Option>
+                                        <Select.Option value="IN_PROGRESS">In Progress</Select.Option>
+                                        <Select.Option value="COMPLETED">Completed</Select.Option>
+                                        <Select.Option value="OVERDUE">Overdue</Select.Option>
+                                      </Select>
+                                    </Form.Item>
+                                    <Form.Item 
+                                      name="grade" 
+                                      style={{ marginBottom: 0, width: 100 }}
+                                    >
+                                      <Input placeholder="Grade %" style={{ borderRadius: 8 }} />
+                                    </Form.Item>
+                                    <Form.Item style={{ marginBottom: 0 }}>
+                                      <Button 
+                                        type="primary" 
+                                        htmlType="submit" 
+                                        icon={<PlusOutlined />}
+                                        loading={addingHomework}
+                                        style={{ 
+                                          borderRadius: 8, 
+                                          background: '#1976d2', 
+                                          borderColor: '#1976d2'
+                                        }}
+                                      >
+                                        Add
+                                      </Button>
+                                    </Form.Item>
+                                  </Form>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }
+                        return <tr {...props} />;
+                      }
+                    }
+                  }}
                 />
               </Card>
             </Col>

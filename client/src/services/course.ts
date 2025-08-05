@@ -7,10 +7,10 @@ export const getCourses = async (token: string) => {
   return res.data;
 };
 
-export const createCourse = async (name: string, token: string) => {
+export const createCourse = async (name: string, token: string, semester?: string) => {
   const res = await axios.post(
     "http://localhost:3000/api/courses",
-    { name },
+    { name, semester },
     { headers: { Authorization: `Bearer ${token}` } }
   );
   return res.data;

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Menu, Typography, Card, Row, Col, Button, List, Tag, Dropdown, Input, message } from "antd";
+import { Layout, Menu, Typography, Card, Row, Col, Button, List, Tag, Dropdown, Input, message, Select } from "antd";
 import {
   HomeOutlined,
   BookOutlined,
@@ -19,9 +19,10 @@ import { updateProfile } from "../services/auth";
 
 const { Sider, Header, Content } = Layout;
 const { Title, Text } = Typography;
+const { Option } = Select;
 
 export default function Home() {
-  const { token, user, login } = useAuth();
+  const { token, user, login, selectedSemester, setSelectedSemester } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [courses, setCourses] = useState<any[]>([]);
@@ -29,6 +30,15 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
+
+  // Common semester options
+  const semesterOptions = [
+    "Fall 2024",
+    "Spring 2025", 
+    "Summer 2025",
+    "Fall 2025",
+    "Spring 2026"
+  ];
 
   // Fetch data
   const fetchData = async () => {
@@ -198,13 +208,26 @@ export default function Home() {
           style={{
             background: "#fff",
             display: "flex",
-            justifyContent: "flex-end",
+            justifyContent: "space-between",
             alignItems: "center",
             padding: "0 32px",
             borderBottom: "1px solid #e3f2fd",
             height: 64,
           }}
         >
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Text style={{ fontWeight: 500, color: "#1976d2" }}>Current Semester:</Text>
+            <Select
+              value={selectedSemester}
+              onChange={setSelectedSemester}
+              style={{ width: 180 }}
+              placeholder="Select semester"
+            >
+              {semesterOptions.map(semester => (
+                <Option key={semester} value={semester}>{semester}</Option>
+              ))}
+            </Select>
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Text style={{ fontWeight: 500, color: "#1976d2" }}>Hello, {user?.username || "User"}</Text>
             <Button

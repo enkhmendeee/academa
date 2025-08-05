@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Menu, Typography, Card, Row, Col, Button, List, Select, Input, message } from "antd";
+import { Layout, Menu, Typography, Card, Row, Col, Button, List, Select, Input, message, Form } from "antd";
 import {
   HomeOutlined,
   BookOutlined,
@@ -13,7 +13,7 @@ import {
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { getCourses } from "../services/course";
+import { getCourses, createCourse } from "../services/course";
 import { getHomeworks } from "../services/homework";
 import { updateProfile } from "../services/auth";
 
@@ -22,13 +22,23 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 export default function Courses() {
-  const { token, user, login } = useAuth();
+  const { token, user, login, selectedSemester, setSelectedSemester } = useAuth();
   const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
   const [homeworks, setHomeworks] = useState<any[]>([]);
-  const [selectedSemester, setSelectedSemester] = useState<string>("all");
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
+  const [courseForm] = Form.useForm();
+  const [addingCourse, setAddingCourse] = useState(false);
+
+  // Common semester options
+  const semesterOptions = [
+    "Fall 2024",
+    "Spring 2025", 
+    "Summer 2025",
+    "Fall 2025",
+    "Spring 2026"
+  ];
 
   // Fetch data
   const fetchData = async () => {
@@ -60,6 +70,21 @@ export default function Courses() {
     } catch (error) {
       message.error("Failed to update motto");
     }
+  };
+
+  // Add course
+  const handleAddCourse = async (values: { name: string }) => {
+    if (!token) return;
+    setAddingCourse(true);
+    try {
+      await createCourse(values.name, token, selectedSemester);
+      message.success("Course added successfully!");
+      courseForm.resetFields();
+      fetchData();
+    } catch (error) {
+      message.error("Failed to add course");
+    }
+    setAddingCourse(false);
   };
 
   // Navigation handler
@@ -148,7 +173,20 @@ export default function Courses() {
             height: 64,
           }}
         >
-          <Title level={2} style={{ color: "#1976d2", margin: 0 }}>Courses</Title>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Title level={2} style={{ color: "#1976d2", margin: 0 }}>Courses</Title>
+            <Text style={{ fontWeight: 500, color: "#1976d2" }}>Current Semester:</Text>
+            <Select
+              value={selectedSemester}
+              onChange={setSelectedSemester}
+              style={{ width: 180 }}
+              placeholder="Select semester"
+            >
+              {semesterOptions.map(semester => (
+                <Option key={semester} value={semester}>{semester}</Option>
+              ))}
+            </Select>
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Text style={{ fontWeight: 500, color: "#1976d2" }}>Hello, {user?.username || "User"}</Text>
             <Button
@@ -313,23 +351,68 @@ export default function Courses() {
                 {/* Add New Course Card */}
                 <Col xs={24} sm={12} md={8} lg={6}>
                   <Card
+                    title={
+                      <div style={{ 
+                        color: "#1976d2", 
+                        fontWeight: 600, 
+                        fontSize: 16,
+                        textAlign: "center"
+                      }}>
+                        Add New Course
+                      </div>
+                    }
                     style={{ 
                       borderRadius: 12, 
-                      border: "2px dashed #d9d9d9", 
+                      border: "none", 
                       boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
                       height: 300,
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: "#fafafa",
-                      cursor: "pointer"
+                      flexDirection: "column"
                     }}
-                    onClick={() => navigate("/dashboard")}
+                    styles={{
+                      body: {
+                        flex: 1,
+                        padding: "12px 16px",
+                        display: "flex",
+                        flexDirection: "column"
+                      }
+                    }}
                   >
-                    <div style={{ textAlign: "center" }}>
-                      <PlusOutlined style={{ fontSize: 48, color: "#1976d2", marginBottom: 16 }} />
-                      <div style={{ color: "#1976d2", fontWeight: 500 }}>Add New Course</div>
-                    </div>
+                    <Form 
+                      form={courseForm} 
+                      layout="vertical" 
+                      onFinish={handleAddCourse}
+                      style={{ height: "100%", display: "flex", flexDirection: "column" }}
+                    >
+                      <Form.Item 
+                        name="name" 
+                        rules={[{ required: true, message: 'Please enter course name!' }]}
+                        style={{ flex: 1 }}
+                      >
+                        <Input 
+                          placeholder="Course Name" 
+                          style={{ borderRadius: 8 }}
+                          size="large"
+                        />
+                      </Form.Item>
+                      <Form.Item style={{ marginBottom: 0 }}>
+                        <Button 
+                          type="primary" 
+                          htmlType="submit" 
+                          icon={<PlusOutlined />}
+                          loading={addingCourse}
+                          style={{ 
+                            width: '100%', 
+                            borderRadius: 8, 
+                            background: '#1976d2', 
+                            borderColor: '#1976d2',
+                            height: 40
+                          }}
+                        >
+                          Add Course
+                        </Button>
+                      </Form.Item>
+                    </Form>
                   </Card>
                 </Col>
               </Row>

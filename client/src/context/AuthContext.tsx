@@ -1,59 +1,73 @@
-import React, { createContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-interface AuthContextType {
-  user: any;
-  token: string | null;
-  loading: boolean;
-  login: (token: string, user: any) => void;
-  logout: () => void;
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  motto?: string;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface AuthContextType {
+  token: string | null;
+  user: User | null;
+  loading: boolean;
+  login: (token: string, user: User) => void;
+  logout: () => void;
+  selectedSemester: string;
+  setSelectedSemester: (semester: string) => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<any>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const savedToken = localStorage.getItem('token');
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [user, setUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem('user');
-    if (savedToken && savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        if (parsedUser) {
-          setToken(savedToken);
-          setUser(parsedUser);
-        }
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('user');
-      }
-    }
-    setLoading(false);
-  }, []);
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+  const [selectedSemester, setSelectedSemester] = useState<string>(() => {
+    return localStorage.getItem('selectedSemester') || 'Fall 2024';
+  });
+  const [loading, setLoading] = useState(false);
 
-  const login = (token: string, user: any) => {
-    localStorage.setItem('token', token);
-    if (user) {
-        localStorage.setItem('user', JSON.stringify(user));
-    }
-    setToken(token);
-    setUser(user);
+  const login = (newToken: string, newUser: User) => {
+    setToken(newToken);
+    setUser(newUser);
+    localStorage.setItem('token', newToken);
+    localStorage.setItem('user', JSON.stringify(newUser));
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
     setToken(null);
     setUser(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   };
 
-  const value = useMemo(() => ({ user, token, loading, login, logout }), [user, token, loading]);
+  const updateSelectedSemester = (semester: string) => {
+    setSelectedSemester(semester);
+    localStorage.setItem('selectedSemester', semester);
+  };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{
+      token,
+      user,
+      loading,
+      login,
+      logout,
+      selectedSemester,
+      setSelectedSemester: updateSelectedSemester,
+    }}>
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
