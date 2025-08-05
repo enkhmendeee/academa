@@ -21,101 +21,7 @@ const { Sider, Header, Content } = Layout;
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-// Homework Adder Component
-const HomeworkAdder = ({ 
-  homeworkForm, 
-  handleAddHomework, 
-  currentSemesterCourses, 
-  addingHomework 
-}: {
-  homeworkForm: any;
-  handleAddHomework: (values: any) => void;
-  currentSemesterCourses: any[];
-  addingHomework: boolean;
-}) => (
-  <Table.Summary.Row>
-    <Table.Summary.Cell index={0} colSpan={6}>
-      <div style={{ padding: '16px', background: '#fafafa', borderTop: '1px solid #f0f0f0' }}>
-        <Form 
-          form={homeworkForm} 
-          layout="inline" 
-          onFinish={handleAddHomework}
-          style={{ display: 'flex', gap: 8, alignItems: 'center' }}
-        >
-          <Form.Item 
-            name="title" 
-            rules={[{ required: true, message: 'Title required!' }]}
-            style={{ marginBottom: 0, flex: 1 }}
-          >
-            <Input placeholder="Homework Title" style={{ borderRadius: 8 }} />
-          </Form.Item>
-          <Form.Item 
-            name="courseId" 
-            rules={[{ required: true, message: 'Course required!' }]}
-            style={{ marginBottom: 0, width: 150 }}
-          >
-            <Select placeholder="Select Course" style={{ borderRadius: 8 }}>
-              {currentSemesterCourses.map(c => (
-                <Select.Option key={c.id} value={c.id}>
-                  {c.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item 
-            name="dueDate" 
-            rules={[{ required: true, message: 'Due date required!' }]}
-            style={{ marginBottom: 0, width: 150 }}
-          >
-            <Input type="date" style={{ borderRadius: 8 }} />
-          </Form.Item>
-          <Form.Item 
-            name="status" 
-            initialValue="PENDING"
-            style={{ marginBottom: 0, width: 120 }}
-          >
-            <Select style={{ borderRadius: 8 }}>
-              <Select.Option value="PENDING">Pending</Select.Option>
-              <Select.Option value="IN_PROGRESS">In Progress</Select.Option>
-              <Select.Option value="COMPLETED">Completed</Select.Option>
-              <Select.Option value="OVERDUE">Overdue</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item style={{ marginBottom: 0 }}>
-            <Button 
-              type="primary" 
-              htmlType="submit" 
-              icon={<PlusOutlined />}
-              loading={addingHomework}
-              style={{ 
-                borderRadius: 8, 
-                background: '#1976d2', 
-                borderColor: '#1976d2'
-              }}
-            >
-              Add
-            </Button>
-          </Form.Item>
-        </Form>
-      </div>
-    </Table.Summary.Cell>
-  </Table.Summary.Row>
-);
 
-// Table Summary Component
-const createTableSummary = (
-  homeworkForm: any,
-  handleAddHomework: (values: any) => void,
-  currentSemesterCourses: any[],
-  addingHomework: boolean
-) => () => (
-  <HomeworkAdder
-    homeworkForm={homeworkForm}
-    handleAddHomework={handleAddHomework}
-    currentSemesterCourses={currentSemesterCourses}
-    addingHomework={addingHomework}
-  />
-);
 
 export default function Homeworks() {
   const { token, user, login, logout, selectedSemester, setSelectedSemester } = useAuth();
@@ -760,99 +666,108 @@ export default function Homeworks() {
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <Form 
-                      form={courseForm} 
-                      layout="inline" 
-                      onFinish={handleAddCourse}
-                      style={{ display: 'flex', gap: 16, alignItems: 'center' }}
-                    >
-                      <Form.Item 
-                        name="name" 
-                        rules={[{ required: true, message: 'Course name required!' }]}
-                        style={{ marginBottom: 0 }}
-                      >
-                        <Input 
-                          placeholder="Enter course name" 
-                          style={{ borderRadius: 8, width: 300 }}
-                          size="large"
-                        />
-                      </Form.Item>
+                    <div style={{ display: 'flex', gap: 16, alignItems: 'center', width: '100%' }}>
+                      <Input 
+                        placeholder="Enter course name" 
+                        value={courseForm.getFieldValue('name') || ''}
+                        onChange={(e) => courseForm.setFieldValue('name', e.target.value)}
+                        onPressEnter={() => {
+                          const value = courseForm.getFieldValue('name');
+                          if (value?.trim()) {
+                            handleAddCourse({ name: value.trim() });
+                            courseForm.resetFields();
+                          }
+                        }}
+                        style={{ 
+                          borderRadius: 8, 
+                          width: 250,
+                          border: '1px solid #d9d9d9',
+                          boxShadow: 'none',
+                          outline: 'none'
+                        }}
+                        size="large"
+                      />
                       
-                      <Form.Item style={{ marginBottom: 0 }}>
-                        <Button 
-                          type="primary" 
-                          htmlType="submit" 
-                          icon={<PlusOutlined />}
-                          loading={addingCourse}
-                          style={{ 
-                            borderRadius: 8, 
-                            background: '#1976d2', 
-                            borderColor: '#1976d2',
-                            height: 40
-                          }}
-                        >
-                          Add Course
-                        </Button>
-                      </Form.Item>
-                    </Form>
-                    
-                    {/* Current Semester Courses */}
-                    {currentSemesterCourses.length > 0 && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
-                          Current:
-                        </Text>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                          {currentSemesterCourses.map((course, index) => {
-                            const colors = [
-                              { bg: '#e3f2fd', border: '#1976d2', text: '#1976d2' },
-                              { bg: '#f3e5f5', border: '#7b1fa2', text: '#7b1fa2' },
-                              { bg: '#e8f5e8', border: '#388e3c', text: '#388e3c' },
-                              { bg: '#fff3e0', border: '#f57c00', text: '#f57c00' },
-                              { bg: '#fce4ec', border: '#c2185b', text: '#c2185b' },
-                              { bg: '#e0f2f1', border: '#00695c', text: '#00695c' }
-                            ];
-                            const color = colors[index % colors.length];
-                            return (
-                              <Tag
-                                key={course.id}
-                                style={{ 
-                                  borderRadius: 16, 
-                                  padding: '6px 14px',
-                                  fontSize: 13,
-                                  fontWeight: 500,
-                                  border: `2px solid ${color.border}`,
-                                  background: color.bg,
-                                  color: color.text,
-                                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.2s ease'
-                                }}
-                                onClick={() => {
-                                  // Navigate to courses page with the selected course focused
-                                  navigate('/courses', { 
-                                    state: { 
-                                      focusedCourseId: course.id,
-                                      selectedSemester: selectedSemester 
-                                    } 
-                                  });
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.transform = 'scale(1.05)';
-                                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.transform = 'scale(1)';
-                                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                                }}
-                              >
-                                {course.name}
-                              </Tag>
-                            );
-                          })}
+                      <Button 
+                        type="primary" 
+                        icon={<PlusOutlined />}
+                        loading={addingCourse}
+                        onClick={() => {
+                          const value = courseForm.getFieldValue('name');
+                          if (value?.trim()) {
+                            handleAddCourse({ name: value.trim() });
+                            courseForm.resetFields();
+                          }
+                        }}
+                        style={{ 
+                          borderRadius: 8, 
+                          background: '#1976d2', 
+                          borderColor: '#1976d2',
+                          height: 40,
+                          flexShrink: 0
+                        }}
+                      >
+                        Add Course
+                      </Button>
+                      
+                      {/* Current Semester Courses */}
+                      {currentSemesterCourses.length > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                            Current:
+                          </Text>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                            {currentSemesterCourses.map((course, index) => {
+                              const colors = [
+                                { bg: '#e3f2fd', border: '#1976d2', text: '#1976d2' },
+                                { bg: '#f3e5f5', border: '#7b1fa2', text: '#7b1fa2' },
+                                { bg: '#e8f5e8', border: '#388e3c', text: '#388e3c' },
+                                { bg: '#fff3e0', border: '#f57c00', text: '#f57c00' },
+                                { bg: '#fce4ec', border: '#c2185b', text: '#c2185b' },
+                                { bg: '#e0f2f1', border: '#00695c', text: '#00695c' }
+                              ];
+                              const color = colors[index % colors.length];
+                              return (
+                                <Tag
+                                  key={course.id}
+                                  style={{ 
+                                    borderRadius: 16, 
+                                    padding: '6px 14px',
+                                    fontSize: 13,
+                                    fontWeight: 500,
+                                    border: `2px solid ${color.border}`,
+                                    background: color.bg,
+                                    color: color.text,
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                  onClick={() => {
+                                    // Navigate to courses page with the selected course focused
+                                    navigate('/courses', { 
+                                      state: { 
+                                        focusedCourseId: course.id,
+                                        selectedSemester: selectedSemester 
+                                      } 
+                                    });
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'scale(1.05)';
+                                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                                  }}
+                                >
+                                  {course.name}
+                                </Tag>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               </Card>
@@ -864,29 +779,92 @@ export default function Homeworks() {
                 title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Add a New Homework</span>}
                 style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}
               >
-                <Table
-                  columns={columns}
-                  dataSource={filteredHomeworks}
-                  loading={loading}
-                  rowKey="id"
-                  pagination={false}
-                  scroll={{ y: 400 }}
-                  summary={createTableSummary(homeworkForm, handleAddHomework, currentSemesterCourses, addingHomework)}
-                />
-              </Card>
-            </Col>
-
-            {/* Visuals/Graph Section */}
-            <Col span={24}>
-              <Card
-                title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Visuals / Graph</span>}
-                style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}
-              >
-                <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Text type="secondary">[Homework statistics and charts will be displayed here]</Text>
+                <div style={{ border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'hidden' }}>
+                  {/* Homework Adder Row - Always at top */}
+                  <div style={{ 
+                    padding: '16px', 
+                    background: '#fafafa', 
+                    borderBottom: '1px solid #f0f0f0',
+                    borderTop: '1px solid #f0f0f0'
+                  }}>
+                    <Form 
+                      form={homeworkForm} 
+                      layout="inline" 
+                      onFinish={handleAddHomework}
+                      style={{ display: 'flex', gap: 8, alignItems: 'center' }}
+                    >
+                      <Form.Item 
+                        name="title" 
+                        rules={[{ required: true, message: 'Title required!' }]}
+                        style={{ marginBottom: 0, flex: 1 }}
+                      >
+                        <Input placeholder="Homework Title" style={{ borderRadius: 8 }} />
+                      </Form.Item>
+                      <Form.Item 
+                        name="courseId" 
+                        rules={[{ required: true, message: 'Course required!' }]}
+                        style={{ marginBottom: 0, width: 150 }}
+                      >
+                        <Select placeholder="Select Course" style={{ borderRadius: 8 }}>
+                          {currentSemesterCourses.map(c => (
+                            <Select.Option key={c.id} value={c.id}>
+                              {c.name}
+                            </Select.Option>
+                          ))}
+                        </Select>
+                      </Form.Item>
+                      <Form.Item 
+                        name="dueDate" 
+                        rules={[{ required: true, message: 'Due date required!' }]}
+                        style={{ marginBottom: 0, width: 150 }}
+                      >
+                        <Input type="date" style={{ borderRadius: 8 }} />
+                      </Form.Item>
+                      <Form.Item 
+                        name="status" 
+                        initialValue="PENDING"
+                        style={{ marginBottom: 0, width: 120 }}
+                      >
+                        <Select style={{ borderRadius: 8 }}>
+                          <Select.Option value="PENDING">Pending</Select.Option>
+                          <Select.Option value="IN_PROGRESS">In Progress</Select.Option>
+                          <Select.Option value="COMPLETED">Completed</Select.Option>
+                          <Select.Option value="OVERDUE">Overdue</Select.Option>
+                        </Select>
+                      </Form.Item>
+                      <Form.Item style={{ marginBottom: 0 }}>
+                        <Button 
+                          type="primary" 
+                          htmlType="submit" 
+                          icon={<PlusOutlined />}
+                          loading={addingHomework}
+                          style={{ 
+                            borderRadius: 8, 
+                            background: '#1976d2', 
+                            borderColor: '#1976d2'
+                          }}
+                        >
+                          Add
+                        </Button>
+                      </Form.Item>
+                    </Form>
+                  </div>
+                  
+                  {/* Homework Table */}
+                  <Table
+                    columns={columns}
+                    dataSource={filteredHomeworks}
+                    loading={loading}
+                    rowKey="id"
+                    pagination={false}
+                    scroll={{ y: Math.max(200, filteredHomeworks.length * 50 + 100) }}
+                    style={{ marginTop: 0 }}
+                  />
                 </div>
               </Card>
             </Col>
+
+
           </Row>
         </Content>
       </Layout>
