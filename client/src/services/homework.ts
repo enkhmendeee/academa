@@ -1,32 +1,20 @@
-import axios from "axios";
+import { api } from "./auth";
 
-export const getHomeworks = async (token: string) => {
-  const res = await axios.get("http://localhost:3000/api/homeworks", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export const getHomeworks = async () => {
+  const res = await api.get("/homeworks");
   return res.data;
 };
 
-export const createHomework = async (data: any, token: string) => {
-  const res = await axios.post(
-    "http://localhost:3000/api/homeworks",
-    data,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+export const createHomework = async (data: any) => {
+  const res = await api.post("/homeworks", data);
   return res.data;
 };
 
-export const deleteHomework = async (id: number, token: string) => {
-  await axios.delete(`http://localhost:3000/api/homeworks/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export const deleteHomework = async (id: number) => {
+  await api.delete(`/homeworks/${id}`);
 };
 
-export const updateHomework = async (id: number, data: any, token: string) => {
-  const res = await axios.patch(
-    `http://localhost:3000/api/homeworks/${id}`,
-    data,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+export const updateHomework = async (id: number, data: any) => {
+  const res = await api.patch(`/homeworks/${id}`, data);
   return res.data;
 };

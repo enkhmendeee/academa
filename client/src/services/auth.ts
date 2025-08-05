@@ -1,7 +1,35 @@
 import axios from "axios";
 
+// Create axios instance with interceptors
+const api = axios.create({
+  baseURL: "http://localhost:3000/api",
+});
+
+// Request interceptor to add token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Response interceptor to handle token expiration
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const login = async (email: string, password: string) => {
-  const res = await axios.post("http://localhost:3000/api/auth/login", { email, password });
+  const res = await api.post("/auth/login", { email, password });
   
   return {
     token: res.data.token,
@@ -10,7 +38,7 @@ export const login = async (email: string, password: string) => {
 };
 
 export const register = async (username: string, email: string, password: string, confirmPassword: string) => {
-  const res = await axios.post("http://localhost:3000/api/auth/register", { username, email, password, confirmPassword });
+  const res = await api.post("/auth/register", { username, email, password, confirmPassword });
   
   return {
     token: res.data.token,
@@ -18,10 +46,11 @@ export const register = async (username: string, email: string, password: string
   };
 };
 
-export const updateProfile = async (data: any, token: string) => {
-  const res = await axios.patch("http://localhost:3000/api/auth/profile", data, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export const updateProfile = async (data: any) => {
+  const res = await api.patch("/auth/profile", data);
   return res.data;
 };
+
+// Export the api instance for other services to use
+export { api };
 

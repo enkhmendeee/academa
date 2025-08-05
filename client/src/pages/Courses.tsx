@@ -53,8 +53,8 @@ export default function Courses() {
     if (!token) return;
     try {
       const [coursesData, homeworksData] = await Promise.all([
-        getCourses(token),
-        getHomeworks(token)
+        getCourses(),
+        getHomeworks()
       ]);
       setCourses(coursesData);
       setHomeworks(homeworksData);
@@ -71,7 +71,7 @@ export default function Courses() {
   const handleSaveMotto = async () => {
     if (!token) return;
     try {
-      const updatedUser = await updateProfile({ motto: mottoValue }, token);
+      const updatedUser = await updateProfile({ motto: mottoValue });
       login(token, updatedUser);
       setEditingMotto(false);
       message.success("Motto updated successfully!");
@@ -101,7 +101,7 @@ export default function Courses() {
   const handleUpdateCourse = async (courseId: number, field: string, value: string) => {
     if (!token) return;
     try {
-      await updateCourse(courseId, { [field]: value }, token);
+      await updateCourse(courseId, { [field]: value });
       message.success("Course updated successfully!");
       fetchData();
       setEditingCourse(null);
@@ -116,7 +116,7 @@ export default function Courses() {
   const handleDeleteCourse = async (courseId: number) => {
     if (!token) return;
     try {
-      await deleteCourse(courseId, token);
+      await deleteCourse(courseId);
       message.success("Course deleted successfully!");
       fetchData();
     } catch (error) {

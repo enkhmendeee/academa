@@ -22,7 +22,7 @@ export default function Dashboard() {
     if (!token) return;
     setCourseLoading(true);
     try {
-      const data = await getCourses(token);
+      const data = await getCourses();
       setCourses(data);
     } catch {
       message.error("Failed to load courses");
@@ -33,7 +33,7 @@ export default function Dashboard() {
     if (!token) return;
     setHomeworkLoading(true);
     try {
-      const data = await getHomeworks(token);
+      const data = await getHomeworks();
       setHomeworks(data);
     } catch {
       message.error("Failed to load homeworks");
@@ -51,7 +51,7 @@ export default function Dashboard() {
   const onDeleteCourse = async (id: number) => {
     if (!token) return;
     try {
-      await deleteCourse(id, token);
+      await deleteCourse(id);
       message.success("Course deleted");
       fetchCourses();
     } catch {
@@ -63,7 +63,7 @@ export default function Dashboard() {
   const onDeleteHomework = async (id: number) => {
     if (!token) return;
     try {
-      await deleteHomework(id, token);
+      await deleteHomework(id);
       message.success("Homework deleted");
       fetchHomeworks();
     } catch {

@@ -54,8 +54,8 @@ export default function Homeworks() {
     setLoading(true);
     try {
       const [homeworksData, coursesData] = await Promise.all([
-        getHomeworks(token),
-        getCourses(token)
+        getHomeworks(),
+        getCourses()
       ]);
       setHomeworks(homeworksData);
       setCourses(coursesData);
@@ -73,7 +73,7 @@ export default function Homeworks() {
   const handleSaveMotto = async () => {
     if (!token) return;
     try {
-      const updatedUser = await updateProfile({ motto: mottoValue }, token);
+      const updatedUser = await updateProfile({ motto: mottoValue });
       login(token, updatedUser);
       setEditingMotto(false);
       message.success("Motto updated successfully!");
@@ -88,7 +88,7 @@ export default function Homeworks() {
     if (!token) return;
     setAddingHomework(true);
     try {
-      await createHomework({ ...values, semester: selectedSemester }, token);
+      await createHomework({ ...values, semester: selectedSemester });
       message.success("Homework added successfully!");
       homeworkForm.resetFields();
       fetchData();
@@ -104,7 +104,7 @@ export default function Homeworks() {
     if (!token) return;
     setAddingCourse(true);
     try {
-      await createCourse(values.name, token, selectedSemester);
+      await createCourse(values.name, selectedSemester);
       message.success("Course added successfully!");
       courseForm.resetFields();
       fetchData();
@@ -131,7 +131,7 @@ export default function Homeworks() {
   const handleUpdateHomeworkField = async (homeworkId: number, field: string, value: any) => {
     if (!token) return;
     try {
-      await updateHomework(homeworkId, { [field]: value }, token);
+      await updateHomework(homeworkId, { [field]: value });
       message.success("Homework updated successfully!");
       fetchData();
       setEditingHomework(null);

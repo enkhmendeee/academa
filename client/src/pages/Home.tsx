@@ -38,7 +38,7 @@ export default function Home() {
     if (!token) return;
     setLoading(true);
     try {
-      const homeworksData = await getHomeworks(token);
+      const homeworksData = await getHomeworks();
       setHomeworks(homeworksData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -71,7 +71,7 @@ export default function Home() {
     
     try {
       console.log("Calling updateProfile with:", { motto: mottoValue });
-      const updatedUser = await updateProfile({ motto: mottoValue }, token);
+      const updatedUser = await updateProfile({ motto: mottoValue });
       console.log("Updated user response:", updatedUser);
       
       // Update the user in context
@@ -127,7 +127,7 @@ export default function Home() {
   const handleStatusChange = async (homeworkId: number, newStatus: string) => {
     if (!token) return;
     try {
-      await updateHomework(homeworkId, { status: newStatus }, token);
+      await updateHomework(homeworkId, { status: newStatus });
       // Refresh data after status update
       fetchData();
     } catch (error) {
