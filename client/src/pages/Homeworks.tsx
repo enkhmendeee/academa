@@ -41,6 +41,12 @@ export default function Homeworks() {
   const [newSemesterValue, setNewSemesterValue] = useState("");
   const [allSemesters, setAllSemesters] = useState<string[]>([]);
   const [profileVisible, setProfileVisible] = useState(false);
+  
+  // Filter and sort states
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [courseFilter, setCourseFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("dueDate");
+  const [sortOrder, setSortOrder] = useState<"ascend" | "descend">("ascend");
 
   // Fetch data
   const fetchData = async () => {
@@ -176,10 +182,60 @@ export default function Homeworks() {
   // Combine existing semesters with newly added ones
   const semesters = Array.from(new Set([...existingSemesters, ...allSemesters]));
 
-  // Filter homeworks by selected semester
-  const filteredHomeworks = selectedSemester === "all" 
-    ? homeworks 
-    : homeworks.filter(hw => (hw.semester || hw.course?.semester) === selectedSemester);
+  // Filter and sort homeworks
+  const filteredAndSortedHomeworks = homeworks
+    .filter(hw => {
+      // Semester filter
+      const semesterMatch = selectedSemester === "all" || (hw.semester || hw.course?.semester) === selectedSemester;
+      
+      // Status filter
+      const statusMatch = statusFilter === "all" || hw.status === statusFilter;
+      
+      // Course filter
+      const courseMatch = courseFilter === "all" || hw.courseId?.toString() === courseFilter;
+      
+      return semesterMatch && statusMatch && courseMatch;
+    })
+    .sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (sortBy) {
+        case "title":
+          aValue = a.title?.toLowerCase();
+          bValue = b.title?.toLowerCase();
+          break;
+        case "course":
+          aValue = a.course?.name?.toLowerCase();
+          bValue = b.course?.name?.toLowerCase();
+          break;
+        case "status":
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        case "grade":
+          aValue = a.grade || 0;
+          bValue = b.grade || 0;
+          break;
+        default:
+          // Default to dueDate sorting
+          aValue = new Date(a.dueDate);
+          bValue = new Date(b.dueDate);
+      }
+      
+      const compareValues = (a: any, b: any, order: "ascend" | "descend") => {
+        if (order === "ascend") {
+          if (a > b) return 1;
+          if (a < b) return -1;
+          return 0;
+        } else {
+          if (a < b) return 1;
+          if (a > b) return -1;
+          return 0;
+        }
+      };
+      
+      return compareValues(aValue, bValue, sortOrder);
+    });
 
   // Filter courses by selected semester
   const currentSemesterCourses = courses.filter(course => course.semester === selectedSemester);
@@ -850,14 +906,100 @@ export default function Homeworks() {
                     </Form>
                   </div>
                   
+                  {/* Filter and Sort Controls */}
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: 16, 
+                    alignItems: 'center', 
+                    marginBottom: 16,
+                    padding: '16px',
+                    background: '#f8f9fa',
+                    borderRadius: 8,
+                    border: '1px solid #e9ecef'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Text strong style={{ fontSize: 14 }}>Filter by:</Text>
+                      <Select
+                        placeholder="Status"
+                        style={{ width: 120 }}
+                        value={statusFilter}
+                        onChange={setStatusFilter}
+                      >
+                        <Option value="all">All Status</Option>
+                        <Option value="PENDING">Pending</Option>
+                        <Option value="IN_PROGRESS">In Progress</Option>
+                        <Option value="COMPLETED">Completed</Option>
+                        <Option value="OVERDUE">Overdue</Option>
+                      </Select>
+                    </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Text strong style={{ fontSize: 14 }}>Course:</Text>
+                      <Select
+                        placeholder="Course"
+                        style={{ width: 150 }}
+                        value={courseFilter}
+                        onChange={setCourseFilter}
+                      >
+                        <Option value="all">All Courses</Option>
+                        {currentSemesterCourses.map(course => (
+                          <Option key={course.id} value={course.id.toString()}>
+                            {course.name}
+                          </Option>
+                        ))}
+                      </Select>
+                    </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Text strong style={{ fontSize: 14 }}>Sort by:</Text>
+                      <Select
+                        style={{ width: 120 }}
+                        value={sortBy}
+                        onChange={setSortBy}
+                      >
+                        <Option value="dueDate">Due Date</Option>
+                        <Option value="title">Title</Option>
+                        <Option value="course">Course</Option>
+                        <Option value="status">Status</Option>
+                        <Option value="grade">Grade</Option>
+                      </Select>
+                    </div>
+                    
+                    <Button
+                      type="text"
+                      icon={sortOrder === "ascend" ? "↑" : "↓"}
+                      onClick={() => setSortOrder(sortOrder === "ascend" ? "descend" : "ascend")}
+                      style={{ 
+                        color: '#1976d2',
+                        fontWeight: 'bold',
+                        fontSize: 16
+                      }}
+                    >
+                      {sortOrder === "ascend" ? "Ascending" : "Descending"}
+                    </Button>
+                    
+                    <Button
+                      type="text"
+                      onClick={() => {
+                        setStatusFilter("all");
+                        setCourseFilter("all");
+                        setSortBy("dueDate");
+                        setSortOrder("ascend");
+                      }}
+                      style={{ color: '#666' }}
+                    >
+                      Clear Filters
+                    </Button>
+                  </div>
+                  
                   {/* Homework Table */}
                   <Table
                     columns={columns}
-                    dataSource={filteredHomeworks}
+                    dataSource={filteredAndSortedHomeworks}
                     loading={loading}
                     rowKey="id"
                     pagination={false}
-                    scroll={{ y: Math.max(200, filteredHomeworks.length * 50 + 100) }}
+                    scroll={{ y: Math.max(200, filteredAndSortedHomeworks.length * 50 + 100) }}
                     style={{ marginTop: 0 }}
                   />
                 </div>

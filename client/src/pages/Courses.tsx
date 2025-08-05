@@ -568,7 +568,7 @@ export default function Courses() {
                           borderRadius: 12, 
                           border: "none", 
                           boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-                          height: 300,
+                          height: Math.max(300, 200 + (getHomeworksForCourse(course.id).length * 40)),
                           display: "flex",
                           flexDirection: "column",
                           transition: "all 0.3s ease"
@@ -640,7 +640,8 @@ export default function Courses() {
                           border: "1px solid #f0f0f0",
                           borderRadius: 8,
                           padding: 8,
-                          background: "#fafafa"
+                          background: "#fafafa",
+                          minHeight: Math.max(100, getHomeworksForCourse(course.id).length * 30)
                         }}>
                           <List
                             size="small"
