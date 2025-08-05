@@ -18,7 +18,8 @@ model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   password  String
-  name  String
+  name      String
+  motto     String?
   createdAt DateTime @default(now())
   courses   Course[]
   homeworks Homework[]

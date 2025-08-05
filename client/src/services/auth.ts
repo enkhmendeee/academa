@@ -18,3 +18,10 @@ export const register = async (name: string, email: string, password: string) =>
   };
 };
 
+export const updateProfile = async (data: any, token: string) => {
+  const res = await axios.patch("http://localhost:3000/api/auth/profile", data, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+};
+

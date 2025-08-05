@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Menu, Typography, Card, Row, Col, Button, List, Select } from "antd";
+import { Layout, Menu, Typography, Card, Row, Col, Button, List, Select, Input, message } from "antd";
 import {
   HomeOutlined,
   BookOutlined,
@@ -8,23 +8,28 @@ import {
   UserOutlined,
   SmileOutlined,
   PlusOutlined,
+  EditOutlined,
+  CheckOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { getCourses } from "../services/course";
 import { getHomeworks } from "../services/homework";
+import { updateProfile } from "../services/auth";
 
 const { Sider, Header, Content } = Layout;
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 export default function Courses() {
-  const { token, user } = useAuth();
+  const { token, user, login } = useAuth();
   const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
   const [homeworks, setHomeworks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedSemester, setSelectedSemester] = useState<string>("all");
+  const [editingMotto, setEditingMotto] = useState(false);
+  const [mottoValue, setMottoValue] = useState(user?.motto || "");
 
   // Fetch data
   const fetchData = async () => {
@@ -46,6 +51,19 @@ export default function Courses() {
   useEffect(() => {
     fetchData();
   }, [token]);
+
+  // Update motto
+  const handleSaveMotto = async () => {
+    if (!token) return;
+    try {
+      const updatedUser = await updateProfile({ motto: mottoValue }, token);
+      login(token, updatedUser);
+      setEditingMotto(false);
+      message.success("Motto updated successfully!");
+    } catch (error) {
+      message.error("Failed to update motto");
+    }
+  };
 
   // Navigation handler
   const handleMenuClick = ({ key }: { key: string }) => {
@@ -158,10 +176,41 @@ export default function Courses() {
                   boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
                   border: "none",
                   background: "#fff",
+                  position: "relative",
                 }}
               >
                 <SmileOutlined style={{ fontSize: 32, color: "#1976d2", marginRight: 12 }} />
-                <span style={{ fontSize: 22, fontWeight: 500 }}>My Motto</span>
+                {editingMotto ? (
+                  <Input
+                    value={mottoValue}
+                    onChange={(e) => setMottoValue(e.target.value)}
+                    style={{ 
+                      fontSize: 22, 
+                      fontWeight: 500, 
+                      border: "none", 
+                      background: "transparent",
+                      textAlign: "center",
+                      width: 300
+                    }}
+                    onPressEnter={handleSaveMotto}
+                  />
+                ) : (
+                  <span style={{ fontSize: 22, fontWeight: 500 }}>
+                    {user?.motto || "My Motto"}
+                  </span>
+                )}
+                <Button
+                  type="text"
+                  icon={editingMotto ? <CheckOutlined /> : <EditOutlined />}
+                  onClick={editingMotto ? handleSaveMotto : () => setEditingMotto(true)}
+                  style={{
+                    position: "absolute",
+                    bottom: 8,
+                    right: 8,
+                    color: "#1976d2",
+                  }}
+                  size="small"
+                />
               </Card>
             </Col>
             
@@ -219,11 +268,13 @@ export default function Courses() {
                         display: "flex",
                         flexDirection: "column"
                       }}
-                      bodyStyle={{ 
-                        flex: 1, 
-                        padding: "12px 16px",
-                        display: "flex",
-                        flexDirection: "column"
+                      styles={{
+                        body: {
+                          flex: 1,
+                          padding: "12px 16px",
+                          display: "flex",
+                          flexDirection: "column"
+                        }
                       }}
                     >
                       <div style={{ 

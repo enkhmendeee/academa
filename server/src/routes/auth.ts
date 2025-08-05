@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { PrismaClient } from '../generated/prisma';
 import { body } from "express-validator";
 import { validateRequest } from "../middleware/validateRequest";
+import { authenticateToken } from "../middleware/authMiddleware";
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -29,7 +30,20 @@ router.post(
           name,
         },
       });
-      res.status(201).json(user);
+      const token = jwt.sign(
+        { id: user.id, username: user.name, email: user.email },
+        process.env.JWT_SECRET!,
+        { expiresIn: "1h" }
+      );
+      res.status(201).json({
+        token,
+        user: {
+          id: user.id,
+          username: user.name,
+          email: user.email,
+          motto: user.motto,
+        },
+      });
     } catch (error) {
       console.error('Error creating user:', error);
       res.status(400).json({ error: 'User registration failed' });
@@ -65,8 +79,48 @@ router.post(
         id: user.id,
         username: user.name,
         email: user.email,
+        motto: user.motto,
       },
     });
+  }
+);
+
+router.patch(
+  '/profile',
+  [
+    authenticateToken,
+    body('motto').optional().isString(),
+    validateRequest,
+  ],
+  async (req: Request, res: Response) => {
+    console.log('Profile update endpoint called');
+    console.log('User from token:', req.user);
+    console.log('Request body:', req.body);
+    
+    const userId = req.user && req.user.id;
+    const { motto } = req.body;
+
+    console.log('User ID:', userId);
+    console.log('Motto to update:', motto);
+
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { motto },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          motto: true,
+        },
+      });
+
+      console.log('Updated user:', updatedUser);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      res.status(500).json({ error: 'Failed to update profile' });
+    }
   }
 );
 
