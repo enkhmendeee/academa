@@ -4,6 +4,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import Courses from "./pages/Courses";
+import Homeworks from "./pages/Homeworks";
 import PrivateRoute from "./components/PrivateRoute";
 import { AuthProvider } from "./context/AuthContext";
 import 'antd/dist/reset.css';
@@ -35,6 +36,14 @@ function App() {
           element={
             <PrivateRoute>
               <Courses />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/homeworks" 
+          element={
+            <PrivateRoute>
+              <Homeworks />
             </PrivateRoute>
           } 
         />

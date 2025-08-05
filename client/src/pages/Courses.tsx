@@ -26,7 +26,6 @@ export default function Courses() {
   const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
   const [homeworks, setHomeworks] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
   const [selectedSemester, setSelectedSemester] = useState<string>("all");
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
@@ -34,7 +33,6 @@ export default function Courses() {
   // Fetch data
   const fetchData = async () => {
     if (!token) return;
-    setLoading(true);
     try {
       const [coursesData, homeworksData] = await Promise.all([
         getCourses(token),
@@ -45,7 +43,6 @@ export default function Courses() {
     } catch (error) {
       console.error("Failed to fetch data:", error);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -75,7 +72,7 @@ export default function Courses() {
         navigate("/courses");
         break;
       case "homeworks":
-        navigate("/dashboard");
+        navigate("/homeworks");
         break;
       case "exams":
         navigate("/dashboard");

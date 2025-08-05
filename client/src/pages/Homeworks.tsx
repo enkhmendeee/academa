@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Menu, Typography, Card, Row, Col, Button, List, Tag, Dropdown, Input, message } from "antd";
+import { Layout, Menu, Typography, Card, Row, Col, Button, Table, Select, Input, message, Tag, Space } from "antd";
 import {
   HomeOutlined,
   BookOutlined,
@@ -7,26 +7,25 @@ import {
   CalendarOutlined,
   UserOutlined,
   SmileOutlined,
-  DownOutlined,
+  PlusOutlined,
   EditOutlined,
   CheckOutlined,
 } from "@ant-design/icons";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { getCourses } from "../services/course";
-import { getHomeworks, updateHomework } from "../services/homework";
+import { getHomeworks } from "../services/homework";
 import { updateProfile } from "../services/auth";
 
 const { Sider, Header, Content } = Layout;
 const { Title, Text } = Typography;
+const { Option } = Select;
 
-export default function Home() {
+export default function Homeworks() {
   const { token, user, login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [courses, setCourses] = useState<any[]>([]);
   const [homeworks, setHomeworks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedSemester, setSelectedSemester] = useState<string>("all");
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
 
@@ -35,11 +34,7 @@ export default function Home() {
     if (!token) return;
     setLoading(true);
     try {
-      const [coursesData, homeworksData] = await Promise.all([
-        getCourses(token),
-        getHomeworks(token)
-      ]);
-      setCourses(coursesData);
+      const homeworksData = await getHomeworks(token);
       setHomeworks(homeworksData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -53,20 +48,13 @@ export default function Home() {
 
   // Update motto
   const handleSaveMotto = async () => {
-    console.log("handleSaveMotto called");
-    if (!token) {
-      console.log("No token found");
-      return;
-    }
+    if (!token) return;
     try {
-      console.log("Calling updateProfile with:", { motto: mottoValue });
       const updatedUser = await updateProfile({ motto: mottoValue }, token);
-      console.log("Updated user:", updatedUser);
       login(token, updatedUser);
       setEditingMotto(false);
       message.success("Motto updated successfully!");
     } catch (error) {
-      console.error("Error updating motto:", error);
       message.error("Failed to update motto");
     }
   };
@@ -105,50 +93,69 @@ export default function Home() {
     }
   };
 
-  // Handle status change
-  const handleStatusChange = async (homeworkId: number, newStatus: string) => {
-    if (!token) return;
-    try {
-      await updateHomework(homeworkId, { status: newStatus }, token);
-      // Refresh data after status update
-      fetchData();
-    } catch (error) {
-      console.error("Failed to update homework status:", error);
-    }
-  };
+  // Get unique semesters from homeworks
+  const semesters = Array.from(new Set(homeworks.map(hw => hw.course?.semester).filter(Boolean)));
 
-  // Status dropdown menu items
-  const getStatusMenuItems = (homeworkId: number) => [
+  // Filter homeworks by selected semester
+  const filteredHomeworks = selectedSemester === "all" 
+    ? homeworks 
+    : homeworks.filter(hw => hw.course?.semester === selectedSemester);
+
+  // Table columns
+  const columns = [
     {
-      key: "PENDING",
-      label: "Pending",
-      onClick: () => handleStatusChange(homeworkId, "PENDING"),
+      title: "HW",
+      dataIndex: "title",
+      key: "title",
+      render: (text: string) => <Text strong>{text}</Text>,
     },
     {
-      key: "IN_PROGRESS",
-      label: "In Progress",
-      onClick: () => handleStatusChange(homeworkId, "IN_PROGRESS"),
+      title: "Course",
+      dataIndex: ["course", "name"],
+      key: "course",
+      render: (text: string) => <Text>{text}</Text>,
     },
     {
-      key: "COMPLETED",
-      label: "Completed",
-      onClick: () => handleStatusChange(homeworkId, "COMPLETED"),
+      title: "Due Date/In",
+      dataIndex: "dueDate",
+      key: "dueDate",
+      render: (date: string) => (
+        <Text>{new Date(date).toLocaleDateString()}</Text>
+      ),
     },
     {
-      key: "OVERDUE",
-      label: "Overdue",
-      onClick: () => handleStatusChange(homeworkId, "OVERDUE"),
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status: string) => (
+        <Tag color={getStatusColor(status)}>
+          {status}
+        </Tag>
+      ),
+    },
+    {
+      title: "Grade",
+      dataIndex: "grade",
+      key: "grade",
+      render: (grade: number) => (
+        <Text>{grade ? `${grade}%` : "-"}</Text>
+      ),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_: any, record: any) => (
+        <Space>
+          <Button size="small" type="link">
+            Edit
+          </Button>
+          <Button size="small" type="link" danger>
+            Delete
+          </Button>
+        </Space>
+      ),
     },
   ];
-
-  // Filter due soon homeworks (due within 7 days)
-  const dueSoonHomeworks = homeworks.filter(hw => {
-    const dueDate = new Date(hw.dueDate);
-    const now = new Date();
-    const diffTime = dueDate.getTime() - now.getTime();
-    const diffDays = diffTime / (1000 * 60 * 60 * 24);
-    return diffDays <= 7 && diffDays >= 0;
-  }).slice(0, 3);
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -173,7 +180,7 @@ export default function Home() {
         </div>
         <Menu
           mode="inline"
-          selectedKeys={[location.pathname === "/" ? "home" : "dashboard"]}
+          selectedKeys={["homeworks"]}
           style={{ background: "transparent", border: "none" }}
           onClick={handleMenuClick}
         >
@@ -198,13 +205,14 @@ export default function Home() {
           style={{
             background: "#fff",
             display: "flex",
-            justifyContent: "flex-end",
+            justifyContent: "space-between",
             alignItems: "center",
             padding: "0 32px",
             borderBottom: "1px solid #e3f2fd",
             height: 64,
           }}
         >
+          <Title level={2} style={{ color: "#1976d2", margin: 0 }}>Homeworks</Title>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Text style={{ fontWeight: 500, color: "#1976d2" }}>Hello, {user?.username || "User"}</Text>
             <Button
@@ -219,6 +227,7 @@ export default function Home() {
         {/* Content */}
         <Content style={{ padding: 32, background: "#e3f2fd", minHeight: 0 }}>
           <Row gutter={[32, 32]} justify="center">
+            {/* Motto Section */}
             <Col span={24} style={{ textAlign: "center" }}>
               <Card
                 style={{
@@ -248,7 +257,7 @@ export default function Home() {
                   />
                 ) : (
                   <span style={{ fontSize: 22, fontWeight: 500 }}>
-                    {user?.motto || "Your motto here"}
+                    {user?.motto || "My Motto"}
                   </span>
                 )}
                 <Button
@@ -265,86 +274,64 @@ export default function Home() {
                 />
               </Card>
             </Col>
-            <Col span={24} style={{ textAlign: "center" }}>
-              <Card
-                style={{
-                  display: "inline-block",
-                  minWidth: 300,
-                  borderRadius: 12,
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-                  border: "none",
-                  background: "#fff",
-                }}
-              >
-                <Title level={4} style={{ color: "#1976d2", margin: 0 }}>Weekly Data</Title>
-                <div style={{ height: 60, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Text type="secondary">Total Courses: {courses.length} | Total Homeworks: {homeworks.length}</Text>
-                </div>
-              </Card>
-            </Col>
+            
+            {/* My Homeworks Section with Semester Selector */}
             <Col span={24}>
-              <Row justify="center">
-                {/* Due Soon Section */}
-                <Col span={16}>
-                  <Card
-                    title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Due Soon</span>}
-                    style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}
-                    loading={loading}
-                  >
-                    <List
-                      dataSource={dueSoonHomeworks}
-                      renderItem={(item) => (
-                        <List.Item
-                          key={item.id}
-                          style={{ padding: "8px 0" }}
-                        >
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-                            <div>
-                              <Text strong>{item.title}</Text>
-                              <br />
-                              <Text type="secondary">Course: {item.course?.name || item.courseId}</Text>
-                            </div>
-                            <div style={{ textAlign: "right" }}>
-                              <div>
-                                <Text type="secondary">
-                                  Due: {new Date(item.dueDate).toLocaleDateString()}
-                                </Text>
-                              </div>
-                              <Dropdown
-                                menu={{ items: getStatusMenuItems(item.id) }}
-                                trigger={["click"]}
-                              >
-                                <Tag 
-                                  color={getStatusColor(item.status)} 
-                                  style={{ 
-                                    marginTop: 4, 
-                                    cursor: "pointer",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 4
-                                  }}
-                                >
-                                  {item.status}
-                                  <DownOutlined style={{ fontSize: 10 }} />
-                                </Tag>
-                              </Dropdown>
-                            </div>
-                          </div>
-                        </List.Item>
-                      )}
-                      locale={{ emptyText: "No homeworks due soon." }}
-                    />
-                  </Card>
-                </Col>
+              <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+                <Title level={3} style={{ color: "#1976d2", margin: 0 }}>My Homeworks</Title>
+                <Select
+                  placeholder="Select semester"
+                  style={{ width: 200 }}
+                  value={selectedSemester}
+                  onChange={setSelectedSemester}
+                >
+                  <Option value="all">All Semesters</Option>
+                  {semesters.map(semester => (
+                    <Option key={semester} value={semester}>{semester}</Option>
+                  ))}
+                </Select>
               </Row>
             </Col>
-            {/* Exams Soon Section */}
+
+            {/* Homework Table */}
             <Col span={24}>
               <Card
-                title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Exams Soon</span>}
-                style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)", marginTop: 24 }}
+                style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}
+                extra={
+                  <Button 
+                    type="primary" 
+                    icon={<PlusOutlined />}
+                    onClick={() => navigate("/dashboard")}
+                    style={{ background: "#1976d2", borderColor: "#1976d2" }}
+                  >
+                    Add New Homework
+                  </Button>
+                }
               >
-                <Text type="secondary">[Exams feature coming soon]</Text>
+                <Table
+                  columns={columns}
+                  dataSource={filteredHomeworks}
+                  loading={loading}
+                  rowKey="id"
+                  pagination={{
+                    pageSize: 10,
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                  }}
+                  scroll={{ y: 400 }}
+                />
+              </Card>
+            </Col>
+
+            {/* Visuals/Graph Section */}
+            <Col span={24}>
+              <Card
+                title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Visuals / Graph</span>}
+                style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}
+              >
+                <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Text type="secondary">[Homework statistics and charts will be displayed here]</Text>
+                </div>
               </Card>
             </Col>
           </Row>
@@ -352,4 +339,4 @@ export default function Home() {
       </Layout>
     </Layout>
   );
-}
+} 
