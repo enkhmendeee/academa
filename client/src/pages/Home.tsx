@@ -10,6 +10,7 @@ import {
   DownOutlined,
   EditOutlined,
   CheckOutlined,
+  LogoutOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -21,7 +22,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 export default function Home() {
-  const { token, user, login } = useAuth();
+  const { token, user, login, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [homeworks, setHomeworks] = useState<any[]>([]);
@@ -357,7 +358,7 @@ export default function Home() {
                 </div>
               </div>
               
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ textAlign: 'center', display: 'flex', gap: 12, justifyContent: 'center' }}>
                 <Button
                   type="primary"
                   onClick={() => setProfileVisible(false)}
@@ -368,6 +369,22 @@ export default function Home() {
                   }}
                 >
                   Close
+                </Button>
+                <Button
+                  type="default"
+                  icon={<LogoutOutlined />}
+                  onClick={() => {
+                    logout();
+                    navigate("/login");
+                    setProfileVisible(false);
+                  }}
+                  style={{
+                    borderRadius: 8,
+                    borderColor: '#ff4d4f',
+                    color: '#ff4d4f'
+                  }}
+                >
+                  Logout
                 </Button>
               </div>
             </Card>

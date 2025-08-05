@@ -5,12 +5,12 @@ import {
   BookOutlined,
   FileTextOutlined,
   CalendarOutlined,
-  UserOutlined,
   SmileOutlined,
   EditOutlined,
   CheckOutlined,
   DeleteOutlined,
   PlusOutlined,
+  LogoutOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -23,7 +23,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 export default function Courses() {
-  const { token, user, login, selectedSemester, setSelectedSemester } = useAuth();
+  const { token, user, login, logout, selectedSemester, setSelectedSemester } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [courses, setCourses] = useState<any[]>([]);
@@ -293,7 +293,9 @@ export default function Courses() {
         
         {/* Profile Popup */}
         {profileVisible && (
-          <div 
+          <button 
+            type="button"
+            aria-label="Close profile popup"
             style={{
               position: 'fixed',
               top: 0,
@@ -304,7 +306,10 @@ export default function Courses() {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              zIndex: 1000
+              zIndex: 1000,
+              cursor: 'pointer',
+              border: 'none',
+              padding: 0
             }}
             onClick={() => setProfileVisible(false)}
           >
@@ -375,7 +380,7 @@ export default function Courses() {
                 </div>
               </div>
               
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ textAlign: 'center', display: 'flex', gap: 12, justifyContent: 'center' }}>
                 <Button
                   type="primary"
                   onClick={() => setProfileVisible(false)}
@@ -387,9 +392,25 @@ export default function Courses() {
                 >
                   Close
                 </Button>
+                <Button
+                  type="default"
+                  icon={<LogoutOutlined />}
+                  onClick={() => {
+                    logout();
+                    navigate("/login");
+                    setProfileVisible(false);
+                  }}
+                  style={{
+                    borderRadius: 8,
+                    borderColor: '#ff4d4f',
+                    color: '#ff4d4f'
+                  }}
+                >
+                  Logout
+                </Button>
               </div>
             </Card>
-          </div>
+          </button>
         )}
         {/* Content */}
         <Content style={{ padding: 32, background: "#e3f2fd", minHeight: 0 }}>

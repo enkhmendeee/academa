@@ -10,6 +10,7 @@ import {
   PlusOutlined,
   EditOutlined,
   CheckOutlined,
+  LogoutOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -118,7 +119,7 @@ const createTableSummary = (
 );
 
 export default function Homeworks() {
-  const { token, user, login, selectedSemester, setSelectedSemester } = useAuth();
+  const { token, user, login, logout, selectedSemester, setSelectedSemester } = useAuth();
   const navigate = useNavigate();
   const [homeworks, setHomeworks] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
@@ -647,7 +648,7 @@ export default function Homeworks() {
                 </div>
               </div>
               
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ textAlign: 'center', display: 'flex', gap: 12, justifyContent: 'center' }}>
                 <Button
                   type="primary"
                   onClick={() => setProfileVisible(false)}
@@ -658,6 +659,22 @@ export default function Homeworks() {
                   }}
                 >
                   Close
+                </Button>
+                <Button
+                  type="default"
+                  icon={<LogoutOutlined />}
+                  onClick={() => {
+                    logout();
+                    navigate("/login");
+                    setProfileVisible(false);
+                  }}
+                  style={{
+                    borderRadius: 8,
+                    borderColor: '#ff4d4f',
+                    color: '#ff4d4f'
+                  }}
+                >
+                  Logout
                 </Button>
               </div>
             </Card>
