@@ -53,7 +53,7 @@ export default function Home() {
         navigate("/");
         break;
       case "courses":
-        navigate("/dashboard");
+        navigate("/courses");
         break;
       case "homeworks":
         navigate("/dashboard");
