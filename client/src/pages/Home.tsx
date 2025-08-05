@@ -13,7 +13,6 @@ import {
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { getCourses } from "../services/course";
 import { getHomeworks, updateHomework } from "../services/homework";
 import { updateProfile } from "../services/auth";
 
@@ -22,34 +21,21 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 export default function Home() {
-  const { token, user, login, selectedSemester, setSelectedSemester } = useAuth();
+  const { token, user, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [courses, setCourses] = useState<any[]>([]);
   const [homeworks, setHomeworks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
 
-  // Common semester options
-  const semesterOptions = [
-    "Fall 2024",
-    "Spring 2025", 
-    "Summer 2025",
-    "Fall 2025",
-    "Spring 2026"
-  ];
 
   // Fetch data
   const fetchData = async () => {
     if (!token) return;
     setLoading(true);
     try {
-      const [coursesData, homeworksData] = await Promise.all([
-        getCourses(token),
-        getHomeworks(token)
-      ]);
-      setCourses(coursesData);
+      const homeworksData = await getHomeworks(token);
       setHomeworks(homeworksData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -64,19 +50,38 @@ export default function Home() {
   // Update motto
   const handleSaveMotto = async () => {
     console.log("handleSaveMotto called");
+    console.log("Current mottoValue:", mottoValue);
+    console.log("Current token:", token);
+    console.log("Current user:", user);
+    
     if (!token) {
       console.log("No token found");
+      message.error("No authentication token found");
       return;
     }
+    
+    if (!mottoValue.trim()) {
+      console.log("Empty motto value");
+      message.error("Motto cannot be empty");
+      return;
+    }
+    
     try {
       console.log("Calling updateProfile with:", { motto: mottoValue });
       const updatedUser = await updateProfile({ motto: mottoValue }, token);
-      console.log("Updated user:", updatedUser);
+      console.log("Updated user response:", updatedUser);
+      
+      // Update the user in context
       login(token, updatedUser);
       setEditingMotto(false);
       message.success("Motto updated successfully!");
-    } catch (error) {
+      console.log("Motto update completed successfully");
+    } catch (error: any) {
       console.error("Error updating motto:", error);
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+        console.error("Error status:", error.response.status);
+      }
       message.error("Failed to update motto");
     }
   };
@@ -194,7 +199,7 @@ export default function Home() {
             Courses
           </Menu.Item>
           <Menu.Item key="homeworks" icon={<FileTextOutlined style={{ color: "#1976d2" }} />}>
-            Homeworks & Courses
+            Homeworks
           </Menu.Item>
           <Menu.Item key="exams" icon={<CalendarOutlined style={{ color: "#1976d2" }} />}>
             Exams
@@ -215,20 +220,56 @@ export default function Home() {
             height: 64,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <Text style={{ fontWeight: 500, color: "#1976d2" }}>Current Semester:</Text>
-            <Select
-              value={selectedSemester}
-              onChange={setSelectedSemester}
-              style={{ width: 180 }}
-              placeholder="Select semester"
-            >
-              {semesterOptions.map(semester => (
-                <Option key={semester} value={semester}>{semester}</Option>
-              ))}
-            </Select>
+          <div style={{ flex: 1 }}></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", flex: 1 }}>
+            <SmileOutlined style={{ fontSize: 24, color: "#1976d2" }} />
+            {editingMotto ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Input
+                  value={mottoValue}
+                  onChange={(e) => setMottoValue(e.target.value)}
+                  onPressEnter={handleSaveMotto}
+                  style={{ 
+                    fontSize: 18, 
+                    fontWeight: 500, 
+                    border: "none", 
+                    background: "transparent",
+                    textAlign: "center",
+                    width: 300,
+                    color: "#1976d2"
+                  }}
+                  autoFocus
+                />
+                <Button
+                  type="text"
+                  icon={<CheckOutlined />}
+                  onClick={() => {
+                    console.log("Confirm button clicked!");
+                    handleSaveMotto();
+                  }}
+                  style={{ color: "#1976d2", padding: 4 }}
+                  size="small"
+                />
+              </div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Text 
+                  style={{ fontSize: 18, fontWeight: 500, color: "#1976d2", cursor: "pointer" }}
+                  onClick={() => setEditingMotto(true)}
+                >
+                  {user?.motto || "My Motto"}
+                </Text>
+                <Button
+                  type="text"
+                  icon={<EditOutlined />}
+                  onClick={() => setEditingMotto(true)}
+                  style={{ color: "#1976d2", padding: 4 }}
+                  size="small"
+                />
+              </div>
+            )}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
             <Text style={{ fontWeight: 500, color: "#1976d2" }}>Hello, {user?.username || "User"}</Text>
             <Button
               type="link"
@@ -242,67 +283,46 @@ export default function Home() {
         {/* Content */}
         <Content style={{ padding: 32, background: "#e3f2fd", minHeight: 0 }}>
           <Row gutter={[32, 32]} justify="center">
+            {/* Weekly Data Section */}
             <Col span={24} style={{ textAlign: "center" }}>
               <Card
                 style={{
-                  display: "inline-block",
-                  minWidth: 400,
-                  borderRadius: 12,
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-                  border: "none",
-                  background: "#fff",
-                  position: "relative",
-                }}
-              >
-                <SmileOutlined style={{ fontSize: 32, color: "#1976d2", marginRight: 12 }} />
-                {editingMotto ? (
-                  <Input
-                    value={mottoValue}
-                    onChange={(e) => setMottoValue(e.target.value)}
-                    style={{ 
-                      fontSize: 22, 
-                      fontWeight: 500, 
-                      border: "none", 
-                      background: "transparent",
-                      textAlign: "center",
-                      width: 300
-                    }}
-                    onPressEnter={handleSaveMotto}
-                  />
-                ) : (
-                  <span style={{ fontSize: 22, fontWeight: 500 }}>
-                    {user?.motto || "Your motto here"}
-                  </span>
-                )}
-                <Button
-                  type="text"
-                  icon={editingMotto ? <CheckOutlined /> : <EditOutlined />}
-                  onClick={editingMotto ? handleSaveMotto : () => setEditingMotto(true)}
-                  style={{
-                    position: "absolute",
-                    bottom: 8,
-                    right: 8,
-                    color: "#1976d2",
-                  }}
-                  size="small"
-                />
-              </Card>
-            </Col>
-            <Col span={24} style={{ textAlign: "center" }}>
-              <Card
-                style={{
-                  display: "inline-block",
-                  minWidth: 300,
                   borderRadius: 12,
                   boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
                   border: "none",
                   background: "#fff",
                 }}
               >
-                <Title level={4} style={{ color: "#1976d2", margin: 0 }}>Weekly Data</Title>
-                <div style={{ height: 60, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Text type="secondary">Total Courses: {courses.length} | Total Homeworks: {homeworks.length}</Text>
-                </div>
+                <Row gutter={[32, 32]} justify="center">
+                  <Col span={6}>
+                    <div style={{ textAlign: "center" }}>
+                      <Text strong style={{ fontSize: 24, color: "#1976d2" }}>12</Text>
+                      <br />
+                      <Text type="secondary">Total Courses</Text>
+                    </div>
+                  </Col>
+                  <Col span={6}>
+                    <div style={{ textAlign: "center" }}>
+                      <Text strong style={{ fontSize: 24, color: "#1976d2" }}>8</Text>
+                      <br />
+                      <Text type="secondary">Completed</Text>
+                    </div>
+                  </Col>
+                  <Col span={6}>
+                    <div style={{ textAlign: "center" }}>
+                      <Text strong style={{ fontSize: 24, color: "#1976d2" }}>4</Text>
+                      <br />
+                      <Text type="secondary">In Progress</Text>
+                    </div>
+                  </Col>
+                  <Col span={6}>
+                    <div style={{ textAlign: "center" }}>
+                      <Text strong style={{ fontSize: 24, color: "#1976d2" }}>2</Text>
+                      <br />
+                      <Text type="secondary">Overdue</Text>
+                    </div>
+                  </Col>
+                </Row>
               </Card>
             </Col>
             <Col span={24}>

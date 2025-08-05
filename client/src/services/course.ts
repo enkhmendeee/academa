@@ -21,3 +21,12 @@ export const deleteCourse = async (id: number, token: string) => {
     headers: { Authorization: `Bearer ${token}` },
   });
 };
+
+export const updateCourse = async (id: number, data: any, token: string) => {
+  const res = await axios.patch(
+    `http://localhost:3000/api/courses/${id}`,
+    data,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return res.data;
+};

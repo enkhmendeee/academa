@@ -59,3 +59,33 @@ export const deleteCourse = async (req: Request, res: Response) => {
     res.status(404).json({ error: "Course not found or not yours" });
   }
 };
+
+export const updateCourse = async (req: Request, res: Response) => {
+  const courseId = parseInt(req.params.id);
+  const userId = req.user.id;
+  const { name, description, semester } = req.body;
+
+  try {
+    const course = await prisma.course.findFirst({
+      where: { id: courseId, userId },
+    });
+
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    const updatedCourse = await prisma.course.update({
+      where: { id: courseId },
+      data: {
+        ...(name && { name }),
+        ...(description !== undefined && { description }),
+        ...(semester && { semester }),
+      },
+    });
+
+    res.json(updatedCourse);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update course" });
+  }
+};

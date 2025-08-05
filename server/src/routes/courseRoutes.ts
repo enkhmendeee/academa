@@ -4,6 +4,7 @@ import {
   getCourses,
   getCourseById,
   deleteCourse,
+  updateCourse,
 } from "../controllers/courseController";
 import { authenticateToken } from "../middleware/authMiddleware";
 import { body, param } from "express-validator";
@@ -30,6 +31,18 @@ router.get(
     validateRequest,
   ],
   getCourseById
+);
+router.patch(
+  "/:id",
+  [
+    authenticateToken,
+    param("id").isInt(),
+    body("name").optional().isString().notEmpty(),
+    body("description").optional().isString(),
+    body("semester").optional().isString(),
+    validateRequest,
+  ],
+  updateCourse
 );
 router.delete(
   "/:id",

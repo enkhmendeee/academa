@@ -28,7 +28,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [selectedSemester, setSelectedSemester] = useState<string>(() => {
     return localStorage.getItem('selectedSemester') || 'Fall 2024';
   });
-  const [loading, setLoading] = useState(false);
 
   const login = (newToken: string, newUser: User) => {
     setToken(newToken);
@@ -53,12 +52,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     <AuthContext.Provider value={useMemo(() => ({
       token,
       user,
-      loading,
+      loading: false, // Removed loading state
       login,
       logout,
       selectedSemester,
       setSelectedSemester: updateSelectedSemester,
-    }), [token, user, loading, selectedSemester])}>
+    }), [token, user, selectedSemester])}>
       {children}
     </AuthContext.Provider>
   );

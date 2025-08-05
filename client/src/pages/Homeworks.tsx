@@ -132,15 +132,6 @@ export default function Homeworks() {
   const [editingHomework, setEditingHomework] = useState<number | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
 
-  // Common semester options
-  const semesterOptions = [
-    "Fall 2024",
-    "Spring 2025", 
-    "Summer 2025",
-    "Fall 2025",
-    "Spring 2026"
-  ];
-
   // Fetch data
   const fetchData = async () => {
     if (!token) return;
@@ -467,7 +458,7 @@ export default function Homeworks() {
             Courses
           </Menu.Item>
           <Menu.Item key="homeworks" icon={<FileTextOutlined style={{ color: "#1976d2" }} />}>
-            Homeworks & Courses
+            Homeworks
           </Menu.Item>
           <Menu.Item key="exams" icon={<CalendarOutlined style={{ color: "#1976d2" }} />}>
             Exams
@@ -488,24 +479,53 @@ export default function Homeworks() {
             height: 64,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div>
-              <Title level={2} style={{ color: "#1976d2", margin: 0 }}>Homeworks</Title>
-              <Text type="secondary" style={{ fontSize: 12 }}>Create courses and manage homeworks</Text>
-            </div>
-            <Text style={{ fontWeight: 500, color: "#1976d2" }}>Current Semester:</Text>
-            <Select
-              value={selectedSemester}
-              onChange={setSelectedSemester}
-              style={{ width: 180 }}
-              placeholder="Select semester"
-            >
-              {semesterOptions.map(semester => (
-                <Option key={semester} value={semester}>{semester}</Option>
-              ))}
-            </Select>
+          <div style={{ flex: 1 }}></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", flex: 1 }}>
+            <SmileOutlined style={{ fontSize: 24, color: "#1976d2" }} />
+            {editingMotto ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Input
+                  value={mottoValue}
+                  onChange={(e) => setMottoValue(e.target.value)}
+                  onPressEnter={handleSaveMotto}
+                  style={{ 
+                    fontSize: 18, 
+                    fontWeight: 500, 
+                    border: "none", 
+                    background: "transparent",
+                    textAlign: "center",
+                    width: 300,
+                    color: "#1976d2"
+                  }}
+                  autoFocus
+                />
+                <Button
+                  type="text"
+                  icon={<CheckOutlined />}
+                  onClick={handleSaveMotto}
+                  style={{ color: "#1976d2", padding: 4 }}
+                  size="small"
+                />
+              </div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Text 
+                  style={{ fontSize: 18, fontWeight: 500, color: "#1976d2", cursor: "pointer" }}
+                  onClick={() => setEditingMotto(true)}
+                >
+                  {user?.motto || "My Motto"}
+                </Text>
+                <Button
+                  type="text"
+                  icon={<EditOutlined />}
+                  onClick={() => setEditingMotto(true)}
+                  style={{ color: "#1976d2", padding: 4 }}
+                  size="small"
+                />
+              </div>
+            )}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
             <Text style={{ fontWeight: 500, color: "#1976d2" }}>Hello, {user?.username || "User"}</Text>
             <Button
               type="link"
@@ -519,54 +539,6 @@ export default function Homeworks() {
         {/* Content */}
         <Content style={{ padding: 32, background: "#e3f2fd", minHeight: 0 }}>
           <Row gutter={[32, 32]} justify="center">
-            {/* Motto Section */}
-            <Col span={24} style={{ textAlign: "center" }}>
-              <Card
-                style={{
-                  display: "inline-block",
-                  minWidth: 400,
-                  borderRadius: 12,
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-                  border: "none",
-                  background: "#fff",
-                  position: "relative",
-                }}
-              >
-                <SmileOutlined style={{ fontSize: 32, color: "#1976d2", marginRight: 12 }} />
-                {editingMotto ? (
-                  <Input
-                    value={mottoValue}
-                    onChange={(e) => setMottoValue(e.target.value)}
-                    style={{ 
-                      fontSize: 22, 
-                      fontWeight: 500, 
-                      border: "none", 
-                      background: "transparent",
-                      textAlign: "center",
-                      width: 300
-                    }}
-                    onPressEnter={handleSaveMotto}
-                  />
-                ) : (
-                  <span style={{ fontSize: 22, fontWeight: 500 }}>
-                    {user?.motto || "My Motto"}
-                  </span>
-                )}
-                <Button
-                  type="text"
-                  icon={editingMotto ? <CheckOutlined /> : <EditOutlined />}
-                  onClick={editingMotto ? handleSaveMotto : () => setEditingMotto(true)}
-                  style={{
-                    position: "absolute",
-                    bottom: 8,
-                    right: 8,
-                    color: "#1976d2",
-                  }}
-                  size="small"
-                />
-              </Card>
-            </Col>
-            
             {/* My Homeworks Section with Semester Selector */}
             <Col span={24}>
               <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
@@ -621,6 +593,16 @@ export default function Homeworks() {
                           borderColor: '#1976d2',
                           height: 40
                         }}
+                        onClick={() => {
+                          // Navigate to courses page after adding course
+                          setTimeout(() => {
+                            navigate('/courses', { 
+                              state: { 
+                                selectedSemester: selectedSemester 
+                              } 
+                            });
+                          }, 1000); // Small delay to allow the course to be added first
+                        }}
                       >
                         Add Course
                       </Button>
@@ -634,21 +616,53 @@ export default function Homeworks() {
                         Current semester courses:
                       </Text>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                        {currentSemesterCourses.map(course => (
-                          <Tag
-                            key={course.id}
-                            color="#1976d2"
-                            style={{ 
-                              borderRadius: 16, 
-                              padding: '4px 12px',
-                              fontSize: 12,
-                              border: '1px solid #1976d2',
-                              background: '#e3f2fd'
-                            }}
-                          >
-                            {course.name}
-                          </Tag>
-                        ))}
+                        {currentSemesterCourses.map((course, index) => {
+                          const colors = [
+                            { bg: '#e3f2fd', border: '#1976d2', text: '#1976d2' },
+                            { bg: '#f3e5f5', border: '#7b1fa2', text: '#7b1fa2' },
+                            { bg: '#e8f5e8', border: '#388e3c', text: '#388e3c' },
+                            { bg: '#fff3e0', border: '#f57c00', text: '#f57c00' },
+                            { bg: '#fce4ec', border: '#c2185b', text: '#c2185b' },
+                            { bg: '#e0f2f1', border: '#00695c', text: '#00695c' }
+                          ];
+                          const color = colors[index % colors.length];
+                          return (
+                            <Tag
+                              key={course.id}
+                              style={{ 
+                                borderRadius: 16, 
+                                padding: '6px 14px',
+                                fontSize: 13,
+                                fontWeight: 500,
+                                border: `2px solid ${color.border}`,
+                                background: color.bg,
+                                color: color.text,
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                              }}
+                              onClick={() => {
+                                // Navigate to courses page with the selected course focused
+                                navigate('/courses', { 
+                                  state: { 
+                                    focusedCourseId: course.id,
+                                    selectedSemester: selectedSemester 
+                                  } 
+                                });
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'scale(1.05)';
+                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                              }}
+                            >
+                              {course.name}
+                            </Tag>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

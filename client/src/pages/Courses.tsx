@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Menu, Typography, Card, Row, Col, Button, List, Select, Input, message } from "antd";
+import { Layout, Menu, Typography, Card, Row, Col, Button, List, Select, Input, message, Popconfirm, Space } from "antd";
 import {
   HomeOutlined,
   BookOutlined,
@@ -9,10 +9,11 @@ import {
   SmileOutlined,
   EditOutlined,
   CheckOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { getCourses } from "../services/course";
+import { getCourses, updateCourse, deleteCourse } from "../services/course";
 import { getHomeworks } from "../services/homework";
 import { updateProfile } from "../services/auth";
 
@@ -23,19 +24,24 @@ const { Option } = Select;
 export default function Courses() {
   const { token, user, login, selectedSemester, setSelectedSemester } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [courses, setCourses] = useState<any[]>([]);
   const [homeworks, setHomeworks] = useState<any[]>([]);
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
+  const [editingCourse, setEditingCourse] = useState<number | null>(null);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [courseEditValues, setCourseEditValues] = useState<{ [key: number]: { name: string; description: string } }>({});
 
-  // Common semester options
-  const semesterOptions = [
-    "Fall 2024",
-    "Spring 2025", 
-    "Summer 2025",
-    "Fall 2025",
-    "Spring 2026"
-  ];
+  // Handle navigation state from Homeworks page
+  useEffect(() => {
+    if (location.state) {
+      const navState = location.state as { selectedSemester?: string };
+      if (navState.selectedSemester && navState.selectedSemester !== selectedSemester) {
+        setSelectedSemester(navState.selectedSemester);
+      }
+    }
+  }, [location.state, selectedSemester, setSelectedSemester]);
 
   // Fetch data
   const fetchData = async () => {
@@ -67,6 +73,50 @@ export default function Courses() {
     } catch (error) {
       console.error("Failed to update motto:", error);
       message.error("Failed to update motto");
+    }
+  };
+
+  // Handle course editing
+  const handleEditCourse = (courseId: number, field: string) => {
+    setEditingCourse(courseId);
+    setEditingField(field);
+    const course = courses.find(c => c.id === courseId);
+    if (course) {
+      setCourseEditValues(prev => ({
+        ...prev,
+        [courseId]: {
+          name: course.name || '',
+          description: course.description || ''
+        }
+      }));
+    }
+  };
+
+  // Handle course update
+  const handleUpdateCourse = async (courseId: number, field: string, value: string) => {
+    if (!token) return;
+    try {
+      await updateCourse(courseId, { [field]: value }, token);
+      message.success("Course updated successfully!");
+      fetchData();
+      setEditingCourse(null);
+      setEditingField(null);
+    } catch (error) {
+      console.error("Failed to update course:", error);
+      message.error("Failed to update course");
+    }
+  };
+
+  // Handle course deletion
+  const handleDeleteCourse = async (courseId: number) => {
+    if (!token) return;
+    try {
+      await deleteCourse(courseId, token);
+      message.success("Course deleted successfully!");
+      fetchData();
+    } catch (error) {
+      console.error("Failed to delete course:", error);
+      message.error("Failed to delete course");
     }
   };
 
@@ -135,7 +185,7 @@ export default function Courses() {
             Courses
           </Menu.Item>
           <Menu.Item key="homeworks" icon={<FileTextOutlined style={{ color: "#1976d2" }} />}>
-            Homeworks & Courses
+            Homeworks
           </Menu.Item>
           <Menu.Item key="exams" icon={<CalendarOutlined style={{ color: "#1976d2" }} />}>
             Exams
@@ -156,21 +206,53 @@ export default function Courses() {
             height: 64,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <Title level={2} style={{ color: "#1976d2", margin: 0 }}>Courses</Title>
-            <Text style={{ fontWeight: 500, color: "#1976d2" }}>Current Semester:</Text>
-            <Select
-              value={selectedSemester}
-              onChange={setSelectedSemester}
-              style={{ width: 180 }}
-              placeholder="Select semester"
-            >
-              {semesterOptions.map(semester => (
-                <Option key={semester} value={semester}>{semester}</Option>
-              ))}
-            </Select>
+          <div style={{ flex: 1 }}></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", flex: 1 }}>
+            <SmileOutlined style={{ fontSize: 24, color: "#1976d2" }} />
+            {editingMotto ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Input
+                  value={mottoValue}
+                  onChange={(e) => setMottoValue(e.target.value)}
+                  onPressEnter={handleSaveMotto}
+                  style={{ 
+                    fontSize: 18, 
+                    fontWeight: 500, 
+                    border: "none", 
+                    background: "transparent",
+                    textAlign: "center",
+                    width: 300,
+                    color: "#1976d2"
+                  }}
+                  autoFocus
+                />
+                <Button
+                  type="text"
+                  icon={<CheckOutlined />}
+                  onClick={handleSaveMotto}
+                  style={{ color: "#1976d2", padding: 4 }}
+                  size="small"
+                />
+              </div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Text 
+                  style={{ fontSize: 18, fontWeight: 500, color: "#1976d2", cursor: "pointer" }}
+                  onClick={() => setEditingMotto(true)}
+                >
+                  {user?.motto || "My Motto"}
+                </Text>
+                <Button
+                  type="text"
+                  icon={<EditOutlined />}
+                  onClick={() => setEditingMotto(true)}
+                  style={{ color: "#1976d2", padding: 4 }}
+                  size="small"
+                />
+              </div>
+            )}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
             <Text style={{ fontWeight: 500, color: "#1976d2" }}>Hello, {user?.username || "User"}</Text>
             <Button
               type="link"
@@ -184,54 +266,6 @@ export default function Courses() {
         {/* Content */}
         <Content style={{ padding: 32, background: "#e3f2fd", minHeight: 0 }}>
           <Row gutter={[32, 32]} justify="center">
-            {/* Motto Section */}
-            <Col span={24} style={{ textAlign: "center" }}>
-              <Card
-                style={{
-                  display: "inline-block",
-                  minWidth: 400,
-                  borderRadius: 12,
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-                  border: "none",
-                  background: "#fff",
-                  position: "relative",
-                }}
-              >
-                <SmileOutlined style={{ fontSize: 32, color: "#1976d2", marginRight: 12 }} />
-                {editingMotto ? (
-                  <Input
-                    value={mottoValue}
-                    onChange={(e) => setMottoValue(e.target.value)}
-                    style={{ 
-                      fontSize: 22, 
-                      fontWeight: 500, 
-                      border: "none", 
-                      background: "transparent",
-                      textAlign: "center",
-                      width: 300
-                    }}
-                    onPressEnter={handleSaveMotto}
-                  />
-                ) : (
-                  <span style={{ fontSize: 22, fontWeight: 500 }}>
-                    {user?.motto || "My Motto"}
-                  </span>
-                )}
-                <Button
-                  type="text"
-                  icon={editingMotto ? <CheckOutlined /> : <EditOutlined />}
-                  onClick={editingMotto ? handleSaveMotto : () => setEditingMotto(true)}
-                  style={{
-                    position: "absolute",
-                    bottom: 8,
-                    right: 8,
-                    color: "#1976d2",
-                  }}
-                  size="small"
-                />
-              </Card>
-            </Col>
-            
             {/* My Courses Section with Semester Selector */}
             <Col span={24}>
               <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
@@ -274,9 +308,64 @@ export default function Courses() {
                             color: "#1976d2", 
                             fontWeight: 600, 
                             fontSize: 16,
-                            textAlign: "center"
+                            textAlign: "center",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between"
                           }}>
-                            {course.name}
+                            {editingCourse === course.id && editingField === 'name' ? (
+                              <Input
+                                value={courseEditValues[course.id]?.name || course.name}
+                                onChange={(e) => setCourseEditValues(prev => ({
+                                  ...prev,
+                                  [course.id]: { ...prev[course.id], name: e.target.value }
+                                }))}
+                                onPressEnter={(e: any) => handleUpdateCourse(course.id, 'name', e.target.value)}
+                                onBlur={() => setEditingCourse(null)}
+                                autoFocus
+                                style={{ flex: 1, marginRight: 8 }}
+                              />
+                            ) : (
+                              <Button
+                                type="text"
+                                style={{ flex: 1, textAlign: "left", padding: 0, height: "auto", color: "#1976d2", fontWeight: 600, fontSize: 16 }}
+                                onClick={() => handleEditCourse(course.id, 'name')}
+                              >
+                                {course.name}
+                              </Button>
+                            )}
+                            <Space>
+                              {editingCourse === course.id && editingField === 'name' ? (
+                                <Button
+                                  type="text"
+                                  icon={<CheckOutlined />}
+                                  onClick={(e: any) => handleUpdateCourse(course.id, 'name', courseEditValues[course.id]?.name || course.name)}
+                                  style={{ color: "#1976d2", padding: 4 }}
+                                  size="small"
+                                />
+                              ) : (
+                                <Button
+                                  type="text"
+                                  icon={<EditOutlined />}
+                                  onClick={() => handleEditCourse(course.id, 'name')}
+                                  style={{ color: "#1976d2", padding: 4 }}
+                                  size="small"
+                                />
+                              )}
+                              <Popconfirm
+                                title="Delete this course?"
+                                onConfirm={() => handleDeleteCourse(course.id)}
+                                okText="Yes"
+                                cancelText="No"
+                              >
+                                <Button
+                                  type="text"
+                                  icon={<DeleteOutlined />}
+                                  style={{ color: "#ff4d4f", padding: 4 }}
+                                  size="small"
+                                />
+                              </Popconfirm>
+                            </Space>
                           </div>
                         }
                         style={{ 
@@ -285,7 +374,8 @@ export default function Courses() {
                           boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
                           height: 300,
                           display: "flex",
-                          flexDirection: "column"
+                          flexDirection: "column",
+                          transition: "all 0.3s ease"
                         }}
                         styles={{
                           body: {
@@ -296,6 +386,58 @@ export default function Courses() {
                           }
                         }}
                       >
+                        {/* Course Description */}
+                        <div style={{ marginBottom: 12 }}>
+                          {editingCourse === course.id && editingField === 'description' ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <Input.TextArea
+                                value={courseEditValues[course.id]?.description || course.description || ''}
+                                onChange={(e) => setCourseEditValues(prev => ({
+                                  ...prev,
+                                  [course.id]: { ...prev[course.id], description: e.target.value }
+                                }))}
+                                onPressEnter={(e: any) => handleUpdateCourse(course.id, 'description', e.target.value)}
+                                onBlur={() => setEditingCourse(null)}
+                                autoFocus
+                                placeholder="Add course description..."
+                                style={{ flex: 1 }}
+                                rows={2}
+                              />
+                              <Button
+                                type="text"
+                                icon={<CheckOutlined />}
+                                onClick={() => handleUpdateCourse(course.id, 'description', courseEditValues[course.id]?.description || '')}
+                                style={{ color: "#1976d2", padding: 4 }}
+                                size="small"
+                              />
+                            </div>
+                          ) : (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <Button
+                                type="text"
+                                style={{ 
+                                  flex: 1, 
+                                  textAlign: "left", 
+                                  padding: 0, 
+                                  height: "auto",
+                                  color: course.description ? "#666" : "#999",
+                                  fontStyle: course.description ? "normal" : "italic",
+                                  fontWeight: "normal"
+                                }}
+                                onClick={() => handleEditCourse(course.id, 'description')}
+                              >
+                                {course.description || "Click to add description..."}
+                              </Button>
+                              <Button
+                                type="text"
+                                icon={<EditOutlined />}
+                                onClick={() => handleEditCourse(course.id, 'description')}
+                                style={{ color: "#1976d2", padding: 4 }}
+                                size="small"
+                              />
+                            </div>
+                          )}
+                        </div>
                         <div style={{ 
                           flex: 1, 
                           overflowY: "auto",
