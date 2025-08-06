@@ -34,10 +34,10 @@ export default function Courses() {
   const [editingCourse, setEditingCourse] = useState<number | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [courseEditValues, setCourseEditValues] = useState<{ [key: number]: { name: string; description: string } }>({});
-  const [addingNewSemester, setAddingNewSemester] = useState(false);
-  const [newSemesterValue, setNewSemesterValue] = useState("");
   const [allSemesters, setAllSemesters] = useState<string[]>([]);
   const [profileVisible, setProfileVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   // Handle navigation state from Homeworks page
   useEffect(() => {
@@ -126,17 +126,7 @@ export default function Courses() {
     }
   };
 
-  // Handle adding new semester
-  const handleAddNewSemester = () => {
-    if (newSemesterValue.trim()) {
-      const newSemester = newSemesterValue.trim();
-      setSelectedSemester(newSemester);
-      setAllSemesters(prev => [...prev, newSemester]);
-      setAddingNewSemester(false);
-      setNewSemesterValue("");
-      message.success("New semester added!");
-    }
-  };
+
 
   // Navigation handler
   const handleMenuClick = ({ key }: { key: string }) => {
@@ -430,59 +420,17 @@ export default function Courses() {
                     ...semesters.map(semester => ({ value: semester, label: semester }))
                   ]}
 
-                  onOpenChange={(open) => {
-                    if (!open) {
-                      setAddingNewSemester(false);
-                      setNewSemesterValue("");
-                    }
-                  }}
+
                 />
-                {addingNewSemester && (
-                  <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <Input
-                      size="small"
-                      placeholder="Enter semester name"
-                      value={newSemesterValue}
-                      onChange={(e) => setNewSemesterValue(e.target.value)}
-                      onPressEnter={handleAddNewSemester}
-                      autoFocus
-                      style={{ flex: 1 }}
-                    />
-                    <Button
-                      size="small"
-                      type="primary"
-                      onClick={handleAddNewSemester}
-                      style={{ background: '#1976d2', borderColor: '#1976d2' }}
-                    >
-                      Add
-                    </Button>
-                    <Button
-                      size="small"
-                      onClick={() => {
-                        setAddingNewSemester(false);
-                        setNewSemesterValue("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-                {!addingNewSemester && (
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<PlusOutlined />}
-                    onClick={() => setAddingNewSemester(true)}
-                    style={{ marginLeft: 8, color: '#1976d2' }}
-                  >
-                    Add New Semester
-                  </Button>
-                )}
+
               </Row>
             </Col>
 
-            {/* Course Distribution Pie Chart */}
+                        {/* Course Distribution Pie Chart and Calendar */}
             <Col span={24}>
+              <Row gutter={[24, 24]}>
+                {/* Course Distribution Pie Chart */}
+                <Col xs={24} lg={12}>
               <Card
                 title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Homework Distribution by Course</span>}
                 style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)", marginBottom: 24 }}
@@ -570,6 +518,128 @@ export default function Courses() {
                   );
                 })()}
               </Card>
+                </Col>
+
+                {/* Homework Distribution by Course */}
+                <Col xs={24} lg={12}>
+                  <Card
+                    title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Homework Distribution by Course</span>}
+                    style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}
+                  >
+                    {(() => {
+                      // Course-wise homework distribution
+                      const courseData = courses.map(course => {
+                        const courseHomeworks = homeworks.filter(hw => hw.courseId === course.id);
+                        return {
+                          name: course.name,
+                          total: courseHomeworks.length,
+                          completed: courseHomeworks.filter(hw => hw.status === 'COMPLETED').length,
+                          pending: courseHomeworks.filter(hw => hw.status === 'PENDING').length,
+                          inProgress: courseHomeworks.filter(hw => hw.status === 'IN_PROGRESS').length,
+                          overdue: courseHomeworks.filter(hw => hw.status === 'OVERDUE').length
+                        };
+                      }).filter(course => course.total > 0);
+
+                      // Bar Chart Options for Course Distribution
+                      const barChartOptions = {
+                        chart: {
+                          type: 'bar' as const,
+                          toolbar: {
+                            show: false
+                          }
+                        },
+                        plotOptions: {
+                          bar: {
+                            horizontal: false,
+                            columnWidth: '55%',
+                            endingShape: 'rounded'
+                          },
+                        },
+                        dataLabels: {
+                          enabled: false
+                        },
+                        stroke: {
+                          show: true,
+                          width: 2,
+                          colors: ['transparent']
+                        },
+                        xaxis: {
+                          categories: courseData.map(course => course.name),
+                          labels: {
+                            style: {
+                              fontSize: '12px'
+                            }
+                          }
+                        },
+                        yaxis: {
+                          title: {
+                            text: 'Number of Homeworks'
+                          },
+                        },
+                        fill: {
+                          opacity: 1
+                        },
+                        tooltip: {
+                          y: {
+                            formatter: function (val: any) {
+                              return val + " homeworks"
+                            }
+                          }
+                        },
+                        colors: ['#43a047', '#ffa726', '#1976d2', '#e53935'],
+                        legend: {
+                          position: 'bottom' as const,
+                          fontSize: '12px'
+                        }
+                      };
+
+                      return courseData.length > 0 ? (
+                        <div style={{ textAlign: 'center' }}>
+                          <ReactApexChart
+                            options={barChartOptions}
+                            series={[
+                              {
+                                name: 'Completed',
+                                data: courseData.map(course => course.completed)
+                              },
+                              {
+                                name: 'In Progress',
+                                data: courseData.map(course => course.inProgress)
+                              },
+                              {
+                                name: 'Pending',
+                                data: courseData.map(course => course.pending)
+                              },
+                              {
+                                name: 'Overdue',
+                                data: courseData.map(course => course.overdue)
+                              }
+                            ]}
+                            type="bar"
+                            height={300}
+                          />
+                          <div style={{ marginTop: 16 }}>
+                            <Text type="secondary">
+                              Total Courses: {courseData.length} | 
+                              Total Homeworks: {courseData.reduce((sum, course) => sum + course.total, 0)}
+                            </Text>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ 
+                          height: 200, 
+                          display: "flex", 
+                          alignItems: "center", 
+                          justifyContent: "center",
+                          color: '#999'
+                        }}>
+                          <Text type="secondary">No homeworks found. Add some homeworks to see the distribution.</Text>
+                        </div>
+                      );
+                    })()}
+                  </Card>
+                </Col>
+              </Row>
             </Col>
 
             {/* Course Cards */}

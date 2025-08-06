@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Menu, Typography, Card, Row, Col, Button, List, Tag, Dropdown, Input, message, Select } from "antd";
+import { Layout, Menu, Typography, Card, Row, Col, Button, List, Tag, Dropdown, Input, message, Select, Statistic } from "antd";
 import DataVisualizations from "../components/DataVisualizations";
 import {
   HomeOutlined,
@@ -11,6 +11,9 @@ import {
   EditOutlined,
   CheckOutlined,
   LogoutOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -404,104 +407,8 @@ export default function Home() {
         {/* Content */}
         <Content style={{ padding: 32, background: "#e3f2fd", minHeight: 0 }}>
           <Row gutter={[32, 32]} justify="center">
-            {/* Weekly Data Section */}
-            <Col span={24} style={{ textAlign: "center" }}>
-              <Card
-                style={{
-                  borderRadius: 12,
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-                  border: "none",
-                  background: "#fff",
-                }}
-              >
-                <Row gutter={[32, 32]} justify="center">
-                  <Col span={6}>
-                    <div style={{ textAlign: "center" }}>
-                      <Text strong style={{ fontSize: 24, color: "#1976d2" }}>12</Text>
-                      <br />
-                      <Text type="secondary">Total Courses</Text>
-                    </div>
-                  </Col>
-                  <Col span={6}>
-                    <div style={{ textAlign: "center" }}>
-                      <Text strong style={{ fontSize: 24, color: "#1976d2" }}>8</Text>
-                      <br />
-                      <Text type="secondary">Completed</Text>
-                    </div>
-                  </Col>
-                  <Col span={6}>
-                    <div style={{ textAlign: "center" }}>
-                      <Text strong style={{ fontSize: 24, color: "#1976d2" }}>4</Text>
-                      <br />
-                      <Text type="secondary">In Progress</Text>
-                    </div>
-                  </Col>
-                  <Col span={6}>
-                    <div style={{ textAlign: "center" }}>
-                      <Text strong style={{ fontSize: 24, color: "#1976d2" }}>2</Text>
-                      <br />
-                      <Text type="secondary">Overdue</Text>
-                    </div>
-                  </Col>
-                </Row>
-              </Card>
-            </Col>
-            <Col span={24}>
-              <Row justify="center">
-                {/* Due Soon Section */}
-                <Col span={16}>
-                  <Card
-                    title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Due Soon</span>}
-                    style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}
-                    loading={loading}
-                  >
-                    <List
-                      dataSource={dueSoonHomeworks}
-                      renderItem={(item) => (
-                        <List.Item
-                          key={item.id}
-                          style={{ padding: "8px 0" }}
-                        >
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-                            <div>
-                              <Text strong>{item.title}</Text>
-                              <br />
-                              <Text type="secondary">Course: {item.course?.name || item.courseId}</Text>
-                            </div>
-                            <div style={{ textAlign: "right" }}>
-                              <div>
-                                <Text type="secondary">
-                                  Due: {new Date(item.dueDate).toLocaleString()}
-                                </Text>
-                              </div>
-                              <Dropdown
-                                menu={{ items: getStatusMenuItems(item.id) }}
-                                trigger={["click"]}
-                              >
-                                <Tag 
-                                  color={getStatusColor(item.status)} 
-                                  style={{ 
-                                    marginTop: 4, 
-                                    cursor: "pointer",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 4
-                                  }}
-                                >
-                                  {item.status}
-                                  <DownOutlined style={{ fontSize: 10 }} />
-                                </Tag>
-                              </Dropdown>
-                            </div>
-                          </div>
-                        </List.Item>
-                      )}
-                      locale={{ emptyText: "No homeworks due soon." }}
-                    />
-                  </Card>
-                </Col>
-              </Row>
-            </Col>
+
+
             {/* Data Visualizations */}
             <Col span={24}>
               <DataVisualizations homeworks={homeworks} courses={courses} />
