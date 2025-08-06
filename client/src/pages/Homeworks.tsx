@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Menu, Typography, Card, Row, Col, Button, Table, Select, Input, message, Tag, Space, Form } from "antd";
+import { Layout, Menu, Typography, Card, Row, Col, Button, Table, Select, Input, message, Tag, Space, Form, Dropdown } from "antd";
 import {
   HomeOutlined,
   BookOutlined,
@@ -132,8 +132,19 @@ export default function Homeworks() {
     if (!token) return;
     try {
       await updateHomework(homeworkId, { [field]: value });
-      message.success("Homework updated successfully!");
-      fetchData();
+      
+      // Show congratulatory message and animation for completed homework
+      if (field === 'status' && value === 'COMPLETED') {
+        message.success("🎉 Congratulations! Homework completed! 🎉");
+        // Add a small delay to let the user see the celebration
+        setTimeout(() => {
+          fetchData();
+        }, 500);
+      } else {
+        message.success("Homework updated successfully!");
+        fetchData();
+      }
+      
       setEditingHomework(null);
       setEditingField(null);
     } catch (error) {
@@ -337,31 +348,104 @@ export default function Homeworks() {
       dataIndex: "status",
       key: "status",
       render: (status: string, record: any) => {
-        const isEditing = editingHomework === record.id && editingField === 'status';
-        return isEditing ? (
-          <Select
-            defaultValue={status}
-            onSelect={(value) => handleUpdateHomeworkField(record.id, 'status', value)}
-            onBlur={() => setEditingHomework(null)}
-            style={{ width: 120, borderRadius: 8 }}
-            autoFocus
-          >
-            <Select.Option value="PENDING">Pending</Select.Option>
-            <Select.Option value="IN_PROGRESS">In Progress</Select.Option>
-            <Select.Option value="COMPLETED">Completed</Select.Option>
-            <Select.Option value="OVERDUE">Overdue</Select.Option>
-          </Select>
-        ) : (
-          <Tag 
-            color={getStatusColor(status)}
-            style={{ cursor: 'pointer' }}
-            onClick={() => {
-              setEditingHomework(record.id);
-              setEditingField('status');
+        const getStatusDisplayText = (status: string) => {
+          switch (status) {
+            case "PENDING": return "Pending";
+            case "IN_PROGRESS": return "In Progress";
+            case "COMPLETED": return "Completed";
+            case "OVERDUE": return "Overdue";
+            default: return status;
+          }
+        };
+
+        return (
+          <Dropdown
+            menu={{
+              items: [
+                {
+                  key: "PENDING",
+                  label: (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ 
+                        width: 12, 
+                        height: 12, 
+                        borderRadius: '50%', 
+                        backgroundColor: getStatusColor("PENDING") 
+                      }} />
+                      Pending
+                    </div>
+                  ),
+                  onClick: () => {
+                    handleUpdateHomeworkField(record.id, 'status', 'PENDING');
+                  }
+                },
+                {
+                  key: "IN_PROGRESS",
+                  label: (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ 
+                        width: 12, 
+                        height: 12, 
+                        borderRadius: '50%', 
+                        backgroundColor: getStatusColor("IN_PROGRESS") 
+                      }} />
+                      In Progress
+                    </div>
+                  ),
+                  onClick: () => {
+                    handleUpdateHomeworkField(record.id, 'status', 'IN_PROGRESS');
+                  }
+                },
+                {
+                  key: "COMPLETED",
+                  label: (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ 
+                        width: 12, 
+                        height: 12, 
+                        borderRadius: '50%', 
+                        backgroundColor: getStatusColor("COMPLETED") 
+                      }} />
+                      Completed
+                    </div>
+                  ),
+                  onClick: () => {
+                    handleUpdateHomeworkField(record.id, 'status', 'COMPLETED');
+                  }
+                },
+                {
+                  key: "OVERDUE",
+                  label: (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ 
+                        width: 12, 
+                        height: 12, 
+                        borderRadius: '50%', 
+                        backgroundColor: getStatusColor("OVERDUE") 
+                      }} />
+                      Overdue
+                    </div>
+                  ),
+                  onClick: () => {
+                    handleUpdateHomeworkField(record.id, 'status', 'OVERDUE');
+                  }
+                }
+              ]
             }}
+            trigger={["click"]}
           >
-            {status}
-          </Tag>
+            <Tag 
+              color={getStatusColor(status)}
+              style={{ 
+                cursor: 'pointer',
+                animation: status === 'COMPLETED' ? 'celebrate 0.6s ease-in-out' : 'none',
+                transform: status === 'COMPLETED' ? 'scale(1.1)' : 'scale(1)',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              {getStatusDisplayText(status)}
+            </Tag>
+          </Dropdown>
         );
       },
     },
@@ -407,7 +491,19 @@ export default function Homeworks() {
   ];
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
+    <>
+      <style>
+        {`
+          @keyframes celebrate {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.2) rotate(5deg); }
+            50% { transform: scale(1.3) rotate(-5deg); }
+            75% { transform: scale(1.2) rotate(5deg); }
+            100% { transform: scale(1.1); }
+          }
+        `}
+      </style>
+      <Layout style={{ minHeight: "100vh" }}>
       {/* Sidebar */}
       <Sider
         width={200}
@@ -1012,5 +1108,6 @@ export default function Homeworks() {
         </Content>
       </Layout>
     </Layout>
+    </>
   );
 } 

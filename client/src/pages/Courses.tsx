@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Menu, Typography, Card, Row, Col, Button, List, Select, Input, message, Popconfirm, Space } from "antd";
+import { Layout, Menu, Typography, Card, Row, Col, Button, List, Select, Input, message, Popconfirm } from "antd";
+import ReactApexChart from 'react-apexcharts';
 import {
   HomeOutlined,
   BookOutlined,
@@ -480,15 +481,94 @@ export default function Courses() {
               </Row>
             </Col>
 
-            {/* Visuals/Graph Section */}
+            {/* Course Distribution Pie Chart */}
             <Col span={24}>
               <Card
-                title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Visuals / Graph</span>}
-                style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}
+                title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Homework Distribution by Course</span>}
+                style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)", marginBottom: 24 }}
               >
-                <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Text type="secondary">[Course statistics and charts will be displayed here]</Text>
-                </div>
+                {(() => {
+                  // Calculate course-wise homework distribution
+                  const courseDistribution = courses.map(course => {
+                    const courseHomeworks = homeworks.filter(hw => hw.courseId === course.id);
+                    return {
+                      name: course.name,
+                      value: courseHomeworks.length,
+                      color: `hsl(${Math.random() * 360}, 70%, 50%)` // Generate random colors
+                    };
+                  }).filter(course => course.value > 0);
+
+                  // Generate colors for courses - Vibrant palette
+                  const colors = [
+                    '#1976d2', '#43a047', '#ff9800', '#e91e63',
+                    '#9c27b0', '#00bcd4', '#ff5722', '#4caf50',
+                    '#ffc107', '#795548', '#607d8b', '#3f51b5'
+                  ];
+
+                  const pieChartOptions = {
+                    chart: {
+                      type: 'pie' as const,
+                      toolbar: {
+                        show: false
+                      }
+                    },
+                    labels: courseDistribution.map((course, index) => course.name),
+                    colors: courseDistribution.map((_, index) => colors[index % colors.length]),
+                    legend: {
+                      show: false
+                    },
+                    dataLabels: {
+                      enabled: true,
+                      formatter: function(val: any, opts: any) {
+                        return opts.w.globals.seriesTotals[opts.seriesIndex] > 0 ? courseDistribution[opts.seriesIndex].name : '';
+                      },
+                      style: {
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        color: '#fff'
+                      },
+                      offsetY: -5,
+                      dropShadow: {
+                        enabled: false
+                      },
+                      textAnchor: 'middle' as const
+                    },
+                    plotOptions: {
+                      pie: {
+                        donut: {
+                          size: '60%'
+                        }
+                      }
+                    }
+                  };
+
+                  return courseDistribution.length > 0 ? (
+                    <div style={{ textAlign: 'center' }}>
+                      <ReactApexChart
+                        options={pieChartOptions}
+                        series={courseDistribution.map(course => course.value)}
+                        type="pie"
+                        height={300}
+                      />
+                      <div style={{ marginTop: 16 }}>
+                        <Text type="secondary">
+                          Total Homeworks: {homeworks.length} | 
+                          Courses with Homeworks: {courseDistribution.length}
+                        </Text>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      height: 200, 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center",
+                      color: '#999'
+                    }}>
+                      <Text type="secondary">No homeworks found. Add some homeworks to see the distribution.</Text>
+                    </div>
+                  );
+                })()}
               </Card>
             </Col>
 
@@ -530,45 +610,26 @@ export default function Courses() {
                                 {course.name}
                               </Button>
                             )}
-                            <Space>
-                              {editingCourse === course.id && editingField === 'name' ? (
-                                <Button
-                                  type="text"
-                                  icon={<CheckOutlined />}
-                                  onClick={(e: any) => handleUpdateCourse(course.id, 'name', courseEditValues[course.id]?.name || course.name)}
-                                  style={{ color: "#1976d2", padding: 4 }}
-                                  size="small"
-                                />
-                              ) : (
-                                <Button
-                                  type="text"
-                                  icon={<EditOutlined />}
-                                  onClick={() => handleEditCourse(course.id, 'name')}
-                                  style={{ color: "#1976d2", padding: 4 }}
-                                  size="small"
-                                />
-                              )}
-                              <Popconfirm
-                                title="Delete this course?"
-                                onConfirm={() => handleDeleteCourse(course.id)}
-                                okText="Yes"
-                                cancelText="No"
-                              >
-                                <Button
-                                  type="text"
-                                  icon={<DeleteOutlined />}
-                                  style={{ color: "#ff4d4f", padding: 4 }}
-                                  size="small"
-                                />
-                              </Popconfirm>
-                            </Space>
+                            <Popconfirm
+                              title="Delete this course?"
+                              onConfirm={() => handleDeleteCourse(course.id)}
+                              okText="Yes"
+                              cancelText="No"
+                            >
+                              <Button
+                                type="text"
+                                icon={<DeleteOutlined />}
+                                style={{ color: "#ff4d4f", padding: 4 }}
+                                size="small"
+                              />
+                            </Popconfirm>
                           </div>
                         }
                         style={{ 
                           borderRadius: 12, 
                           border: "none", 
                           boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-                          height: Math.max(300, 200 + (getHomeworksForCourse(course.id).length * 40)),
+                          height: Math.max(400, 300 + (getHomeworksForCourse(course.id).length * 40)),
                           display: "flex",
                           flexDirection: "column",
                           transition: "all 0.3s ease"
@@ -599,13 +660,7 @@ export default function Courses() {
                                 style={{ flex: 1 }}
                                 rows={2}
                               />
-                              <Button
-                                type="text"
-                                icon={<CheckOutlined />}
-                                onClick={() => handleUpdateCourse(course.id, 'description', courseEditValues[course.id]?.description || '')}
-                                style={{ color: "#1976d2", padding: 4 }}
-                                size="small"
-                              />
+
                             </div>
                           ) : (
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -624,16 +679,82 @@ export default function Courses() {
                               >
                                 {course.description || "Click to add description..."}
                               </Button>
-                              <Button
-                                type="text"
-                                icon={<EditOutlined />}
-                                onClick={() => handleEditCourse(course.id, 'description')}
-                                style={{ color: "#1976d2", padding: 4 }}
-                                size="small"
-                              />
+
                             </div>
                           )}
                         </div>
+                        {/* Progress Bar */}
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center',
+                            marginBottom: 8
+                          }}>
+                            <Text strong style={{ fontSize: 12, color: '#666' }}>Progress</Text>
+                            <Text type="secondary" style={{ fontSize: 11 }}>
+                              {getHomeworksForCourse(course.id).filter(hw => hw.status === 'COMPLETED').length} / {getHomeworksForCourse(course.id).length} completed
+                            </Text>
+                          </div>
+                          <div style={{ 
+                            width: '100%', 
+                            height: 8, 
+                            backgroundColor: '#f0f0f0', 
+                            borderRadius: 4,
+                            overflow: 'hidden',
+                            display: 'flex'
+                          }}>
+                            {(() => {
+                              const courseHomeworks = getHomeworksForCourse(course.id);
+                              const total = courseHomeworks.length;
+                              if (total === 0) return null;
+                              
+                              const completed = courseHomeworks.filter(hw => hw.status === 'COMPLETED').length;
+                              const inProgress = courseHomeworks.filter(hw => hw.status === 'IN_PROGRESS').length;
+                              const pending = courseHomeworks.filter(hw => hw.status === 'PENDING').length;
+                              const overdue = courseHomeworks.filter(hw => hw.status === 'OVERDUE').length;
+                              
+                              return (
+                                <>
+                                  {completed > 0 && (
+                                    <div style={{
+                                      width: `${(completed / total) * 100}%`,
+                                      height: '100%',
+                                      backgroundColor: '#43a047',
+                                      transition: 'width 0.3s ease'
+                                    }} />
+                                  )}
+                                  {inProgress > 0 && (
+                                    <div style={{
+                                      width: `${(inProgress / total) * 100}%`,
+                                      height: '100%',
+                                      backgroundColor: '#ffa726',
+                                      transition: 'width 0.3s ease'
+                                    }} />
+                                  )}
+                                  {pending > 0 && (
+                                    <div style={{
+                                      width: `${(pending / total) * 100}%`,
+                                      height: '100%',
+                                      backgroundColor: '#1976d2',
+                                      transition: 'width 0.3s ease'
+                                    }} />
+                                  )}
+                                  {overdue > 0 && (
+                                    <div style={{
+                                      width: `${(overdue / total) * 100}%`,
+                                      height: '100%',
+                                      backgroundColor: '#e53935',
+                                      transition: 'width 0.3s ease'
+                                    }} />
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </div>
+
+                        </div>
+                        
                         <div style={{ 
                           flex: 1, 
                           overflowY: "auto",
@@ -641,7 +762,7 @@ export default function Courses() {
                           borderRadius: 8,
                           padding: 8,
                           background: "#fafafa",
-                          minHeight: Math.max(100, getHomeworksForCourse(course.id).length * 30)
+                          minHeight: Math.max(150, getHomeworksForCourse(course.id).length * 30)
                         }}>
                           <List
                             size="small"

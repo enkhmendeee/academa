@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Layout, Menu, Typography, Card, Row, Col, Button, List, Tag, Dropdown, Input, message, Select } from "antd";
+import DataVisualizations from "../components/DataVisualizations";
 import {
   HomeOutlined,
   BookOutlined,
@@ -14,6 +15,7 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { getHomeworks, updateHomework } from "../services/homework";
+import { getCourses } from "../services/course";
 import { updateProfile } from "../services/auth";
 
 const { Sider, Header, Content } = Layout;
@@ -25,6 +27,7 @@ export default function Home() {
   const navigate = useNavigate();
   const location = useLocation();
   const [homeworks, setHomeworks] = useState<any[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
@@ -38,8 +41,12 @@ export default function Home() {
     if (!token) return;
     setLoading(true);
     try {
-      const homeworksData = await getHomeworks();
+      const [homeworksData, coursesData] = await Promise.all([
+        getHomeworks(),
+        getCourses()
+      ]);
       setHomeworks(homeworksData);
+      setCourses(coursesData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
     }
@@ -495,14 +502,9 @@ export default function Home() {
                 </Col>
               </Row>
             </Col>
-            {/* Exams Soon Section */}
+            {/* Data Visualizations */}
             <Col span={24}>
-              <Card
-                title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Exams Soon</span>}
-                style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)", marginTop: 24 }}
-              >
-                <Text type="secondary">[Exams feature coming soon]</Text>
-              </Card>
+              <DataVisualizations homeworks={homeworks} courses={courses} />
             </Col>
           </Row>
         </Content>
