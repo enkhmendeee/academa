@@ -33,10 +33,7 @@ export default function Courses() {
   const [editingCourse, setEditingCourse] = useState<number | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [courseEditValues, setCourseEditValues] = useState<{ [key: number]: { name: string; description: string } }>({});
-  const [allSemesters, setAllSemesters] = useState<string[]>([]);
   const [profileVisible, setProfileVisible] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   // Handle navigation state from Homeworks page
   useEffect(() => {
@@ -148,8 +145,8 @@ export default function Courses() {
   // Get unique semesters from courses
   const existingSemesters = Array.from(new Set(courses.map(course => course.semester).filter(Boolean)));
   
-  // Combine existing semesters with newly added ones
-  const semesters = Array.from(new Set([...existingSemesters, ...allSemesters]));
+  // Get unique semesters from courses
+  const semesters = existingSemesters;
 
   // Filter courses by selected semester
   const filteredCourses = selectedSemester === "all" 
