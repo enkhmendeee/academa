@@ -5,8 +5,6 @@ import {
   HomeOutlined,
   BookOutlined,
   FileTextOutlined,
-  CalendarOutlined,
-  SmileOutlined,
   EditOutlined,
   CheckOutlined,
   LogoutOutlined,
@@ -123,6 +121,12 @@ export default function Home() {
           borderRight: "2px solid #bbdefb",
           paddingTop: 24,
           boxShadow: "2px 0 8px rgba(0, 0, 0, 0.1)",
+          position: "fixed",
+          height: "100vh",
+          left: 0,
+          top: 0,
+          zIndex: 1000,
+          overflowY: "auto"
         }}
       >
         <div style={{
@@ -151,11 +155,15 @@ export default function Home() {
               fontSize: "16px", 
               fontWeight: "500", 
               color: "#1976d2",
-              margin: "8px 16px",
+              margin: "8px 8px",
               borderRadius: "8px",
               height: "48px",
               lineHeight: "48px",
-              background: "#ffffff"
+              background: "#ffffff",
+              paddingLeft: "12px",
+              paddingRight: "24px",
+              width: "180px",
+              marginRight: "8px"
             }}
           >
             Home
@@ -167,10 +175,14 @@ export default function Home() {
               fontSize: "16px", 
               fontWeight: "500", 
               color: "#ffffff",
-              margin: "8px 16px",
+              margin: "8px 8px",
               borderRadius: "8px",
               height: "48px",
-              lineHeight: "48px"
+              lineHeight: "48px",
+              paddingLeft: "12px",
+              paddingRight: "24px",
+              width: "180px",
+              marginRight: "8px"
             }}
           >
             Courses
@@ -182,10 +194,14 @@ export default function Home() {
               fontSize: "16px", 
               fontWeight: "500", 
               color: "#ffffff",
-              margin: "8px 16px",
+              margin: "8px 8px",
               borderRadius: "8px",
               height: "48px",
-              lineHeight: "48px"
+              lineHeight: "48px",
+              paddingLeft: "12px",
+              paddingRight: "24px",
+              width: "180px",
+              marginRight: "8px"
             }}
           >
             Homeworks
@@ -193,7 +209,7 @@ export default function Home() {
         </Menu>
       </Sider>
       {/* Main Layout */}
-      <Layout>
+      <Layout style={{ marginLeft: 200 }}>
         {/* Header */}
         <Header
           style={{
@@ -377,7 +393,7 @@ export default function Home() {
           </button>
         )}
         {/* Content */}
-        <Content style={{ padding: "16px 32px", background: "linear-gradient(180deg, #ffffff 0%, #e3f2fd 100%)", minHeight: 0 }}>
+        <Content style={{ padding: "16px 32px", background: "linear-gradient(180deg, #ffffff 0%, #bbdefb 100%)", minHeight: 0 }}>
           <Row gutter={[32, 32]} justify="center">
 
 
