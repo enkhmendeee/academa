@@ -30,8 +30,8 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
     : 0;
 
   return (
-    <div style={{ padding: '24px 0' }}>
-      <Title level={3} style={{ color: '#1976d2', marginBottom: 24, textAlign: 'center' }}>
+    <div style={{ padding: '8px 0' }}>
+      <Title level={3} style={{ color: '#1976d2', marginBottom: 16, textAlign: 'center' }}>
         Academic Analytics Dashboard
       </Title>
 

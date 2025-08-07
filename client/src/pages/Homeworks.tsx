@@ -19,7 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { getHomeworks, createHomework, updateHomework } from "../services/homework";
 import { getCourses, createCourse } from "../services/course";
-import { getExams, createExam } from "../services/exam";
+import { getExams, createExam, updateExam } from "../services/exam";
 import { updateProfile } from "../services/auth";
 
 const { Sider, Header, Content } = Layout;
@@ -73,6 +73,15 @@ export default function Homeworks() {
     if (newValue && statusFilter === "COMPLETED") {
       setStatusFilter("all");
     }
+  };
+
+  // Get current date with midnight time for default value
+  const getDefaultDateTime = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}T00:00`;
   };
 
   // Add CSS animation for smooth slide-down effect
@@ -159,6 +168,21 @@ export default function Homeworks() {
     fetchData();
   }, [token]);
 
+  // Check for overdue assignments on component mount and every minute
+  useEffect(() => {
+    if (token) {
+      // Check immediately when component mounts
+      checkAndUpdateOverdue();
+      
+      // Set up interval to check every minute
+      const interval = setInterval(() => {
+        checkAndUpdateOverdue();
+      }, 60000); // 60000ms = 1 minute
+      
+      return () => clearInterval(interval);
+    }
+  }, [token, homeworks, exams]);
+
   // Update motto
   const handleSaveMotto = async () => {
     if (!token) return;
@@ -230,6 +254,45 @@ export default function Homeworks() {
       setAddingNewSemester(false);
       setNewSemesterValue("");
       message.success("New semester added!");
+    }
+  };
+
+  // Check and update overdue assignments
+  const checkAndUpdateOverdue = async () => {
+    if (!token) return;
+    
+    const now = new Date();
+    const overdueHomeworks = homeworks.filter(hw => {
+      const dueDate = new Date(hw.dueDate);
+      return hw.status !== 'COMPLETED' && hw.status !== 'OVERDUE' && dueDate < now;
+    });
+
+    const overdueExams = exams.filter(exam => {
+      const examDate = new Date(exam.examDate);
+      return exam.status !== 'COMPLETED' && exam.status !== 'OVERDUE' && examDate < now;
+    });
+
+    // Update overdue homeworks
+    for (const hw of overdueHomeworks) {
+      try {
+        await updateHomework(hw.id, { status: 'OVERDUE' });
+      } catch (error) {
+        console.error(`Failed to update overdue homework ${hw.id}:`, error);
+      }
+    }
+
+    // Update overdue exams
+    for (const exam of overdueExams) {
+      try {
+        await updateExam(exam.id, { status: 'OVERDUE' });
+      } catch (error) {
+        console.error(`Failed to update overdue exam ${exam.id}:`, error);
+      }
+    }
+
+    // Refresh data if any assignments were updated
+    if (overdueHomeworks.length > 0 || overdueExams.length > 0) {
+      fetchData();
     }
   };
 
@@ -686,13 +749,14 @@ export default function Homeworks() {
       <Sider
         width={200}
         style={{
-          background: "#e3f2fd",
-          borderRight: "1px solid #bbdefb",
+          background: "#1976d2",
+          borderRight: "2px solid #bbdefb",
           paddingTop: 24,
+          boxShadow: "2px 0 8px rgba(0, 0, 0, 0.1)",
         }}
       >
         <div style={{
-          color: "#1976d2",
+          color: "#ffffff",
           fontWeight: 700,
           fontSize: 28,
           textAlign: "center",
@@ -704,18 +768,23 @@ export default function Homeworks() {
         <Menu
           mode="inline"
           selectedKeys={["homeworks"]}
-          style={{ background: "transparent", border: "none" }}
+          style={{ 
+            background: "transparent", 
+            border: "none",
+            color: "#ffffff"
+          }}
+          className="sidebar-menu"
           onClick={handleMenuClick}
         >
-          <Menu.Item key="home" icon={<HomeOutlined style={{ color: "#1976d2" }} />}>
-            Home
-          </Menu.Item>
-          <Menu.Item key="courses" icon={<BookOutlined style={{ color: "#1976d2" }} />}>
-            Courses
-          </Menu.Item>
-          <Menu.Item key="homeworks" icon={<FileTextOutlined style={{ color: "#1976d2" }} />}>
-            Homeworks
-          </Menu.Item>
+                      <Menu.Item key="home" icon={<HomeOutlined style={{ color: "#ffffff" }} />}>
+              Home
+            </Menu.Item>
+            <Menu.Item key="courses" icon={<BookOutlined style={{ color: "#ffffff" }} />}>
+              Courses
+            </Menu.Item>
+            <Menu.Item key="homeworks" icon={<FileTextOutlined style={{ color: "#ffffff" }} />}>
+              Homeworks
+            </Menu.Item>
         </Menu>
       </Sider>
       {/* Main Layout */}
@@ -728,13 +797,12 @@ export default function Homeworks() {
             justifyContent: "space-between",
             alignItems: "center",
             padding: "0 32px",
-            borderBottom: "1px solid #e3f2fd",
+            borderBottom: "3px solid #bbdefb",
             height: 64,
           }}
         >
           <div style={{ flex: 1 }}></div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", flex: 1 }}>
-            <SmileOutlined style={{ fontSize: 24, color: "#1976d2" }} />
             {editingMotto ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <Input
@@ -782,13 +850,13 @@ export default function Homeworks() {
             <Button
               type="text"
               style={{ 
-                color: "#1976d2", 
+                color: "#ffffff", 
                 fontWeight: 500, 
                 fontSize: 16,
                 padding: "8px 16px",
                 borderRadius: 8,
-                border: "1px solid #e3f2fd",
-                background: "#f8fbff"
+                border: "1px solid #1976d2",
+                background: "#1976d2"
               }}
               onClick={() => setProfileVisible(true)}
             >
@@ -868,23 +936,7 @@ export default function Homeworks() {
                 </div>
               </div>
               
-              <div style={{ marginBottom: 24 }}>
-                <Title level={4} style={{ color: '#1976d2', marginBottom: 12 }}>
-                  Semester Information
-                </Title>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text strong>Current Semester:</Text>
-                  <Text>{selectedSemester}</Text>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text strong>Total Semesters:</Text>
-                  <Text>{semesters.length}</Text>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Text strong>Available Semesters:</Text>
-                  <Text>{semesters.join(', ')}</Text>
-                </div>
-              </div>
+
               
               <div style={{ textAlign: 'center', display: 'flex', gap: 12, justifyContent: 'center' }}>
                 <Button
@@ -919,7 +971,7 @@ export default function Homeworks() {
           </button>
         )}
         {/* Content */}
-        <Content style={{ padding: 32, background: "#e3f2fd", minHeight: 0 }}>
+        <Content style={{ padding: 32, background: "linear-gradient(180deg, #ffffff 0%, #e3f2fd 100%)", minHeight: 0 }}>
           <Row gutter={[32, 32]} justify="center">
             {/* My Homeworks Section with Semester Selector */}
             <Col span={24}>
@@ -1304,6 +1356,7 @@ export default function Homeworks() {
                         name={formType === 'homework' ? 'dueDate' : 'examDate'} 
                         rules={[{ required: true, message: formType === 'homework' ? 'Due date required!' : 'Exam date required!' }]}
                         style={{ marginBottom: 0, width: 150 }}
+                        initialValue={getDefaultDateTime()}
                       >
                         <Input 
                           type="datetime-local" 

@@ -2,6 +2,79 @@
   text-align: center;
 }
 
+/* Sidebar Menu Styling */
+.ant-menu-inline .ant-menu-item,
+.ant-menu-inline .ant-menu-item:hover,
+.ant-menu-inline .ant-menu-item-selected {
+  color: #ffffff !important;
+  background: #1B3C53 !important;
+  border: none !important;
+  margin: 4px 8px !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-menu-inline .ant-menu-item:hover {
+  background: #2A4A5F !important;
+}
+
+.ant-menu-inline .ant-menu-item-selected {
+  background: #3A5A6F !important;
+  font-weight: 600 !important;
+}
+
+.ant-menu-inline .ant-menu-item .ant-menu-title-content {
+  color: inherit !important;
+  font-size: 18px !important;
+  font-weight: 500 !important;
+}
+
+.ant-menu-inline .ant-menu-item .anticon {
+  color: #ffffff !important;
+  font-size: 22px !important;
+}
+
+/* Additional specific selectors to override Ant Design defaults */
+.ant-layout-sider .ant-menu-inline .ant-menu-item {
+  background: #1B3C53 !important;
+  color: #ffffff !important;
+}
+
+.ant-layout-sider .ant-menu-inline .ant-menu-item:hover {
+  background: #2A4A5F !important;
+  color: #ffffff !important;
+}
+
+.ant-layout-sider .ant-menu-inline .ant-menu-item-selected {
+  background: #3A5A6F !important;
+  color: #ffffff !important;
+}
+
+/* Sidebar menu specific styling */
+.sidebar-menu .ant-menu-item {
+  background: #1B3C53 !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  margin: 4px 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+.sidebar-menu .ant-menu-item:hover {
+  background: #2A4A5F !important;
+  color: #ffffff !important;
+}
+
+.sidebar-menu .ant-menu-item-selected {
+  background: #3A5A6F !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.sidebar-menu .ant-menu-item .anticon {
+  color: #ffffff !important;
+  font-size: 22px !important;
+}
+
 .App-logo {
   height: 40vmin;
   pointer-events: none;

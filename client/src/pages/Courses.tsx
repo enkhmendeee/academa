@@ -161,13 +161,14 @@ export default function Courses() {
       <Sider
         width={200}
         style={{
-          background: "#e3f2fd",
-          borderRight: "1px solid #bbdefb",
+          background: "#1976d2",
+          borderRight: "2px solid #bbdefb",
           paddingTop: 24,
+          boxShadow: "2px 0 8px rgba(0, 0, 0, 0.1)",
         }}
       >
         <div style={{
-          color: "#1976d2",
+          color: "#ffffff",
           fontWeight: 700,
           fontSize: 28,
           textAlign: "center",
@@ -179,18 +180,23 @@ export default function Courses() {
         <Menu
           mode="inline"
           selectedKeys={["courses"]}
-          style={{ background: "transparent", border: "none" }}
+          style={{ 
+            background: "transparent", 
+            border: "none",
+            color: "#ffffff"
+          }}
+          className="sidebar-menu"
           onClick={handleMenuClick}
         >
-          <Menu.Item key="home" icon={<HomeOutlined style={{ color: "#1976d2" }} />}>
-            Home
-          </Menu.Item>
-          <Menu.Item key="courses" icon={<BookOutlined style={{ color: "#1976d2" }} />}>
-            Courses
-          </Menu.Item>
-          <Menu.Item key="homeworks" icon={<FileTextOutlined style={{ color: "#1976d2" }} />}>
-            Homeworks
-          </Menu.Item>
+                      <Menu.Item key="home" icon={<HomeOutlined style={{ color: "#ffffff" }} />}>
+              Home
+            </Menu.Item>
+            <Menu.Item key="courses" icon={<BookOutlined style={{ color: "#ffffff" }} />}>
+              Courses
+            </Menu.Item>
+            <Menu.Item key="homeworks" icon={<FileTextOutlined style={{ color: "#ffffff" }} />}>
+              Homeworks
+            </Menu.Item>
         </Menu>
       </Sider>
       {/* Main Layout */}
@@ -203,13 +209,12 @@ export default function Courses() {
             justifyContent: "space-between",
             alignItems: "center",
             padding: "0 32px",
-            borderBottom: "1px solid #e3f2fd",
+            borderBottom: "3px solid #bbdefb",
             height: 64,
           }}
         >
           <div style={{ flex: 1 }}></div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", flex: 1 }}>
-            <SmileOutlined style={{ fontSize: 24, color: "#1976d2" }} />
             {editingMotto ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <Input
@@ -257,13 +262,13 @@ export default function Courses() {
             <Button
               type="text"
               style={{ 
-                color: "#1976d2", 
+                color: "#ffffff", 
                 fontWeight: 500, 
                 fontSize: 16,
                 padding: "8px 16px",
                 borderRadius: 8,
-                border: "1px solid #e3f2fd",
-                background: "#f8fbff"
+                border: "1px solid #1976d2",
+                background: "#1976d2"
               }}
               onClick={() => setProfileVisible(true)}
             >
@@ -343,23 +348,7 @@ export default function Courses() {
                 </div>
               </div>
               
-              <div style={{ marginBottom: 24 }}>
-                <Title level={4} style={{ color: '#1976d2', marginBottom: 12 }}>
-                  Semester Information
-                </Title>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text strong>Current Semester:</Text>
-                  <Text>{selectedSemester}</Text>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text strong>Total Semesters:</Text>
-                  <Text>{semesters.length}</Text>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Text strong>Available Semesters:</Text>
-                  <Text>{semesters.join(', ')}</Text>
-                </div>
-              </div>
+
               
               <div style={{ textAlign: 'center', display: 'flex', gap: 12, justifyContent: 'center' }}>
                 <Button
@@ -394,7 +383,7 @@ export default function Courses() {
           </button>
         )}
         {/* Content */}
-        <Content style={{ padding: 32, background: "#e3f2fd", minHeight: 0 }}>
+        <Content style={{ padding: 32, background: "linear-gradient(180deg, #ffffff 0%, #e3f2fd 100%)", minHeight: 0 }}>
           <Row gutter={[32, 32]} justify="center">
             {/* My Courses Section with Semester Selector */}
             <Col span={24}>
@@ -687,7 +676,7 @@ export default function Courses() {
                         }
                         style={{ 
                           borderRadius: 12, 
-                          border: "none", 
+                          border: `4px solid ${course.color || "#1976d2"}`, 
                           boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
                           height: Math.max(400, 300 + (getHomeworksForCourse(course.id).length * 40)),
                           display: "flex",

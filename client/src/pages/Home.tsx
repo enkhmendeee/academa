@@ -119,13 +119,14 @@ export default function Home() {
       <Sider
         width={200}
         style={{
-          background: "#e3f2fd",
-          borderRight: "1px solid #bbdefb",
+          background: "#1976d2",
+          borderRight: "2px solid #bbdefb",
           paddingTop: 24,
+          boxShadow: "2px 0 8px rgba(0, 0, 0, 0.1)",
         }}
       >
         <div style={{
-          color: "#1976d2",
+          color: "#ffffff",
           fontWeight: 700,
           fontSize: 28,
           textAlign: "center",
@@ -137,18 +138,23 @@ export default function Home() {
         <Menu
           mode="inline"
           selectedKeys={["home"]}
-          style={{ background: "transparent", border: "none" }}
+          style={{ 
+            background: "transparent", 
+            border: "none",
+            color: "#ffffff"
+          }}
+          className="sidebar-menu"
           onClick={handleMenuClick}
         >
-          <Menu.Item key="home" icon={<HomeOutlined style={{ color: "#1976d2" }} />}>
-            Home
-          </Menu.Item>
-          <Menu.Item key="courses" icon={<BookOutlined style={{ color: "#1976d2" }} />}>
-            Courses
-          </Menu.Item>
-          <Menu.Item key="homeworks" icon={<FileTextOutlined style={{ color: "#1976d2" }} />}>
-            Homeworks
-          </Menu.Item>
+                      <Menu.Item key="home" icon={<HomeOutlined style={{ color: "#ffffff" }} />}>
+              Home
+            </Menu.Item>
+            <Menu.Item key="courses" icon={<BookOutlined style={{ color: "#ffffff" }} />}>
+              Courses
+            </Menu.Item>
+            <Menu.Item key="homeworks" icon={<FileTextOutlined style={{ color: "#ffffff" }} />}>
+              Homeworks
+            </Menu.Item>
         </Menu>
       </Sider>
       {/* Main Layout */}
@@ -161,13 +167,12 @@ export default function Home() {
             justifyContent: "space-between",
             alignItems: "center",
             padding: "0 32px",
-            borderBottom: "1px solid #e3f2fd",
+            borderBottom: "3px solid #bbdefb",
             height: 64,
           }}
         >
           <div style={{ flex: 1 }}></div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", flex: 1 }}>
-            <SmileOutlined style={{ fontSize: 24, color: "#1976d2" }} />
             {editingMotto ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <Input
@@ -218,13 +223,13 @@ export default function Home() {
             <Button
               type="text"
               style={{ 
-                color: "#1976d2", 
+                color: "#ffffff", 
                 fontWeight: 500, 
                 fontSize: 16,
                 padding: "8px 16px",
                 borderRadius: 8,
-                border: "1px solid #e3f2fd",
-                background: "#f8fbff"
+                border: "1px solid #1976d2",
+                background: "#1976d2"
               }}
               onClick={() => setProfileVisible(true)}
             >
@@ -337,7 +342,7 @@ export default function Home() {
           </button>
         )}
         {/* Content */}
-        <Content style={{ padding: 32, background: "#e3f2fd", minHeight: 0 }}>
+        <Content style={{ padding: "16px 32px", background: "linear-gradient(180deg, #ffffff 0%, #e3f2fd 100%)", minHeight: 0 }}>
           <Row gutter={[32, 32]} justify="center">
 
 
