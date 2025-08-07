@@ -10,11 +10,16 @@ import {
   EditOutlined,
   CheckOutlined,
   LogoutOutlined,
+  FilterOutlined,
+  UpOutlined,
+  DownOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { getHomeworks, createHomework, updateHomework } from "../services/homework";
 import { getCourses, createCourse } from "../services/course";
+import { getExams, createExam } from "../services/exam";
 import { updateProfile } from "../services/auth";
 
 const { Sider, Header, Content } = Layout;
@@ -24,9 +29,33 @@ const { Option } = Select;
 
 
 export default function Homeworks() {
+  // Add CSS animation for smooth slide-down effect
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
+    };
+  }, []);
+
   const { token, user, login, logout, selectedSemester, setSelectedSemester } = useAuth();
   const navigate = useNavigate();
   const [homeworks, setHomeworks] = useState<any[]>([]);
+  const [exams, setExams] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingMotto, setEditingMotto] = useState(false);
@@ -35,6 +64,9 @@ export default function Homeworks() {
   const [addingHomework, setAddingHomework] = useState(false);
   const [courseForm] = Form.useForm();
   const [addingCourse, setAddingCourse] = useState(false);
+  const [courseName, setCourseName] = useState('');
+  const [courseColor, setCourseColor] = useState('#1976d2');
+  const [formType, setFormType] = useState<'homework' | 'exam'>('homework');
   const [editingHomework, setEditingHomework] = useState<number | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [addingNewSemester, setAddingNewSemester] = useState(false);
@@ -47,17 +79,42 @@ export default function Homeworks() {
   const [courseFilter, setCourseFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("dueDate");
   const [sortOrder, setSortOrder] = useState<"ascend" | "descend">("ascend");
+  
+  // Filter visibility state
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Vibrant color palette for courses
+  const vibrantColors = [
+    '#1976d2', // Blue
+    '#e91e63', // Pink
+    '#9c27b0', // Purple
+    '#ff5722', // Orange
+    '#4caf50', // Green
+    '#ff9800', // Amber
+    '#00bcd4', // Cyan
+    '#f44336', // Red
+    '#673ab7', // Deep Purple
+    '#3f51b5', // Indigo
+    '#009688', // Teal
+    '#ff4081', // Pink
+    '#795548', // Brown
+    '#607d8b', // Blue Grey
+    '#8bc34a', // Light Green
+    '#ffc107'  // Yellow
+  ];
 
   // Fetch data
   const fetchData = async () => {
     if (!token) return;
     setLoading(true);
     try {
-      const [homeworksData, coursesData] = await Promise.all([
+      const [homeworksData, examsData, coursesData] = await Promise.all([
         getHomeworks(),
+        getExams(),
         getCourses()
       ]);
       setHomeworks(homeworksData);
+      setExams(examsData);
       setCourses(coursesData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -100,11 +157,11 @@ export default function Homeworks() {
   };
 
   // Add course
-  const handleAddCourse = async (values: { name: string }) => {
+  const handleAddCourse = async (values: { name: string; color?: string }) => {
     if (!token) return;
     setAddingCourse(true);
     try {
-      await createCourse(values.name, selectedSemester);
+      await createCourse(values.name, selectedSemester, values.color);
       message.success("Course added successfully!");
       courseForm.resetFields();
       fetchData();
@@ -113,6 +170,22 @@ export default function Homeworks() {
       message.error("Failed to add course");
     }
     setAddingCourse(false);
+  };
+
+  // Add exam
+  const handleAddExam = async (values: any) => {
+    if (!token) return;
+    setAddingHomework(true);
+    try {
+      await createExam({ ...values, semester: selectedSemester });
+      message.success("Exam added successfully!");
+      homeworkForm.resetFields();
+      fetchData();
+    } catch (error) {
+      console.error("Failed to add exam:", error);
+      message.error("Failed to add exam");
+    }
+    setAddingHomework(false);
   };
 
   // Handle adding new semester
@@ -164,9 +237,6 @@ export default function Homeworks() {
         break;
       case "homeworks":
         navigate("/homeworks");
-        break;
-      case "exams":
-        navigate("/exams");
         break;
     }
   };
@@ -255,11 +325,12 @@ export default function Homeworks() {
   // Table columns
   const columns = [
     {
-      title: "HW",
+      title: "Assignment",
       dataIndex: "title",
       key: "title",
       render: (text: string, record: any) => {
         const isEditing = editingHomework === record.id && editingField === 'title';
+        const isExam = record.type === 'exam' || record.examType;
         return isEditing ? (
           <Input
             defaultValue={text}
@@ -269,16 +340,24 @@ export default function Homeworks() {
             style={{ borderRadius: 8 }}
           />
         ) : (
-          <Text 
-            strong 
-            style={{ cursor: 'pointer' }}
-            onClick={() => {
-              setEditingHomework(record.id);
-              setEditingField('title');
-            }}
-          >
-            {text}
-          </Text>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Tag 
+              color={isExam ? 'purple' : 'blue'}
+              style={{ fontSize: '10px' }}
+            >
+              {isExam ? 'Exam' : 'HW'}
+            </Tag>
+            <Text 
+              strong 
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                setEditingHomework(record.id);
+                setEditingField('title');
+              }}
+            >
+              {text}
+            </Text>
+          </div>
         );
       },
     },
@@ -288,6 +367,10 @@ export default function Homeworks() {
       key: "course",
       render: (text: string, record: any) => {
         const isEditing = editingHomework === record.id && editingField === 'courseId';
+        const course = courses.find(c => c.id === record.courseId);
+        const courseColor = course?.color || '#1976d2';
+        const bgColor = `${courseColor}15`; // 15% opacity
+        
         return isEditing ? (
           <Select
             defaultValue={record.courseId}
@@ -303,15 +386,39 @@ export default function Homeworks() {
             ))}
           </Select>
         ) : (
-          <Text 
-            style={{ cursor: 'pointer' }}
+          <div
+            style={{ 
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '4px 12px',
+              borderRadius: '16px',
+              backgroundColor: bgColor,
+              border: `2px solid ${courseColor}`,
+              color: courseColor,
+              fontSize: '12px',
+              fontWeight: '500',
+              transition: 'all 0.2s ease',
+              maxWidth: '150px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
             onClick={() => {
               setEditingHomework(record.id);
               setEditingField('courseId');
             }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
           >
             {text}
-          </Text>
+          </div>
         );
       },
     },
@@ -450,41 +557,17 @@ export default function Homeworks() {
       },
     },
     {
-      title: "Grade",
-      dataIndex: "grade",
-      key: "grade",
-      render: (grade: number, record: any) => {
-        const isEditing = editingHomework === record.id && editingField === 'grade';
-        return isEditing ? (
-          <Input
-            defaultValue={grade || ''}
-            onPressEnter={(e: any) => handleUpdateHomeworkField(record.id, 'grade', parseInt(e.target.value) || null)}
-            onBlur={() => setEditingHomework(null)}
-            autoFocus
-            style={{ borderRadius: 8, width: 80 }}
-            placeholder="%"
-          />
-        ) : (
-          <Text 
-            style={{ cursor: 'pointer' }}
-            onClick={() => {
-              setEditingHomework(record.id);
-              setEditingField('grade');
-            }}
-          >
-            {grade ? `${grade}%` : "-"}
-          </Text>
-        );
-      },
-    },
-    {
       title: "Actions",
       key: "actions",
       render: (_: any, record: any) => (
         <Space>
-          <Button size="small" type="link" danger>
-            Delete
-          </Button>
+          <Button 
+            size="small" 
+            type="text" 
+            danger
+            icon={<DeleteOutlined />}
+            style={{ padding: 4 }}
+          />
         </Space>
       ),
     },
@@ -537,9 +620,6 @@ export default function Homeworks() {
           </Menu.Item>
           <Menu.Item key="homeworks" icon={<FileTextOutlined style={{ color: "#1976d2" }} />}>
             Homeworks
-          </Menu.Item>
-          <Menu.Item key="exams" icon={<CalendarOutlined style={{ color: "#1976d2" }} />}>
-            Exams
           </Menu.Item>
         </Menu>
       </Sider>
@@ -767,47 +847,87 @@ export default function Homeworks() {
                     }
                   }}
                 />
-                {addingNewSemester && (
-                  <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <Input
-                      size="small"
-                      placeholder="Enter semester name"
-                      value={newSemesterValue}
-                      onChange={(e) => setNewSemesterValue(e.target.value)}
-                      onPressEnter={handleAddNewSemester}
-                      autoFocus
-                      style={{ flex: 1 }}
-                    />
-                    <Button
-                      size="small"
-                      type="primary"
-                      onClick={handleAddNewSemester}
-                      style={{ background: '#1976d2', borderColor: '#1976d2' }}
-                    >
-                      Add
-                    </Button>
-                    <Button
-                      size="small"
-                      onClick={() => {
-                        setAddingNewSemester(false);
-                        setNewSemesterValue("");
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                  {!addingNewSemester && (
+                    <div
+                      onClick={() => setAddingNewSemester(true)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '10px 20px',
+                        borderRadius: '20px',
+                        backgroundColor: '#e3f2fd',
+                        border: '2px solid #1976d2',
+                        color: '#1976d2',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 8px rgba(25, 118, 210, 0.15)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#bbdefb';
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(25, 118, 210, 0.25)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = '#e3f2fd';
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(25, 118, 210, 0.15)';
                       }}
                     >
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-                {!addingNewSemester && (
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<PlusOutlined />}
-                    onClick={() => setAddingNewSemester(true)}
-                    style={{ marginLeft: 8, color: '#1976d2' }}
-                  >
-                    Add New Semester
-                  </Button>
-                )}
+                      <PlusOutlined style={{ fontSize: '14px' }} />
+                      Add New Semester
+                    </div>
+                  )}
+                  {addingNewSemester && (
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: 8, 
+                      alignItems: 'center',
+                      marginTop: 8,
+                      padding: '12px 16px',
+                      backgroundColor: '#f8fbff',
+                      borderRadius: '12px',
+                      border: '1px solid #e3f2fd',
+                      boxShadow: '0 4px 12px rgba(25, 118, 210, 0.1)',
+                      animation: 'slideDown 0.3s ease-out'
+                    }}>
+                      <Input
+                        size="small"
+                        placeholder="Enter semester name"
+                        value={newSemesterValue}
+                        onChange={(e) => setNewSemesterValue(e.target.value)}
+                        onPressEnter={handleAddNewSemester}
+                        autoFocus
+                        style={{ width: 200, borderRadius: 8 }}
+                      />
+                      <Button
+                        size="small"
+                        type="primary"
+                        onClick={handleAddNewSemester}
+                        style={{ 
+                          background: '#1976d2', 
+                          borderColor: '#1976d2',
+                          borderRadius: 8
+                        }}
+                      >
+                        Add
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={() => {
+                          setAddingNewSemester(false);
+                          setNewSemesterValue("");
+                        }}
+                        style={{ borderRadius: 8 }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </Row>
             </Col>
 
@@ -822,13 +942,13 @@ export default function Homeworks() {
                     <div style={{ display: 'flex', gap: 16, alignItems: 'center', width: '100%' }}>
                       <Input 
                         placeholder="Enter course name" 
-                        value={courseForm.getFieldValue('name') || ''}
-                        onChange={(e) => courseForm.setFieldValue('name', e.target.value)}
+                        value={courseName}
+                        onChange={(e) => setCourseName(e.target.value)}
                         onPressEnter={() => {
-                          const value = courseForm.getFieldValue('name');
-                          if (value?.trim()) {
-                            handleAddCourse({ name: value.trim() });
-                            courseForm.resetFields();
+                          if (courseName?.trim()) {
+                            handleAddCourse({ name: courseName.trim(), color: courseColor });
+                            setCourseName('');
+                            setCourseColor('#1976d2');
                           }
                         }}
                         style={{ 
@@ -841,15 +961,35 @@ export default function Homeworks() {
                         size="large"
                       />
                       
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        {vibrantColors.map((color, index) => (
+                          <div
+                            key={index}
+                            onClick={() => setCourseColor(color)}
+                            style={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: '50%',
+                              backgroundColor: color,
+                              border: courseColor === color ? '3px solid #333' : '2px solid #fff',
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                              transition: 'all 0.2s ease'
+                            }}
+                            title={`Select ${color}`}
+                          />
+                        ))}
+                      </div>
+                      
                       <Button 
                         type="primary" 
                         icon={<PlusOutlined />}
                         loading={addingCourse}
                         onClick={() => {
-                          const value = courseForm.getFieldValue('name');
-                          if (value?.trim()) {
-                            handleAddCourse({ name: value.trim() });
-                            courseForm.resetFields();
+                          if (courseName?.trim()) {
+                            handleAddCourse({ name: courseName.trim(), color: courseColor });
+                            setCourseName('');
+                            setCourseColor('#1976d2');
                           }
                         }}
                         style={{ 
@@ -871,15 +1011,8 @@ export default function Homeworks() {
                           </Text>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                             {currentSemesterCourses.map((course, index) => {
-                              const colors = [
-                                { bg: '#e3f2fd', border: '#1976d2', text: '#1976d2' },
-                                { bg: '#f3e5f5', border: '#7b1fa2', text: '#7b1fa2' },
-                                { bg: '#e8f5e8', border: '#388e3c', text: '#388e3c' },
-                                { bg: '#fff3e0', border: '#f57c00', text: '#f57c00' },
-                                { bg: '#fce4ec', border: '#c2185b', text: '#c2185b' },
-                                { bg: '#e0f2f1', border: '#00695c', text: '#00695c' }
-                              ];
-                              const color = colors[index % colors.length];
+                              const courseColor = course.color || '#1976d2';
+                              const bgColor = `${courseColor}15`; // 15% opacity
                               return (
                                 <Tag
                                   key={course.id}
@@ -888,9 +1021,9 @@ export default function Homeworks() {
                                     padding: '6px 14px',
                                     fontSize: 13,
                                     fontWeight: 500,
-                                    border: `2px solid ${color.border}`,
-                                    background: color.bg,
-                                    color: color.text,
+                                    border: `2px solid ${courseColor}`,
+                                    background: bgColor,
+                                    color: courseColor,
                                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s ease'
@@ -926,14 +1059,48 @@ export default function Homeworks() {
               </Card>
             </Col>
 
-            {/* Homework Table */}
+            {/* Assignment Table */}
             <Col span={24}>
               <Card
-                title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Add a New Homework</span>}
+                title={
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <span style={{ color: "#1976d2", fontWeight: 500, minWidth: '120px' }}>
+                      Add a New Assignment
+                    </span>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <Button
+                        size="small"
+                        type={formType === 'homework' ? 'primary' : 'default'}
+                        onClick={() => setFormType('homework')}
+                        style={{ 
+                          borderRadius: 6,
+                          background: formType === 'homework' ? '#1976d2' : '#f0f0f0',
+                          borderColor: formType === 'homework' ? '#1976d2' : '#d9d9d9',
+                          color: formType === 'homework' ? 'white' : '#666'
+                        }}
+                      >
+                        Homework
+                      </Button>
+                      <Button
+                        size="small"
+                        type={formType === 'exam' ? 'primary' : 'default'}
+                        onClick={() => setFormType('exam')}
+                        style={{ 
+                          borderRadius: 6,
+                          background: formType === 'exam' ? '#9c27b0' : '#f0f0f0',
+                          borderColor: formType === 'exam' ? '#9c27b0' : '#d9d9d9',
+                          color: formType === 'exam' ? 'white' : '#666'
+                        }}
+                      >
+                        Exam
+                      </Button>
+                    </div>
+                  </div>
+                }
                 style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}
               >
                 <div style={{ border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'hidden' }}>
-                  {/* Homework Adder Row - Always at top */}
+                  {/* Assignment Adder Row - Always at top */}
                   <div style={{ 
                     padding: '16px', 
                     background: '#fafafa', 
@@ -943,7 +1110,7 @@ export default function Homeworks() {
                     <Form 
                       form={homeworkForm} 
                       layout="inline" 
-                      onFinish={handleAddHomework}
+                      onFinish={formType === 'homework' ? handleAddHomework : handleAddExam}
                       style={{ display: 'flex', gap: 8, alignItems: 'center' }}
                     >
                       <Form.Item 
@@ -951,7 +1118,10 @@ export default function Homeworks() {
                         rules={[{ required: true, message: 'Title required!' }]}
                         style={{ marginBottom: 0, flex: 1 }}
                       >
-                        <Input placeholder="Homework Title" style={{ borderRadius: 8 }} />
+                        <Input 
+                          placeholder={formType === 'homework' ? 'Homework Title' : 'Exam Title'} 
+                          style={{ borderRadius: 8 }} 
+                        />
                       </Form.Item>
                       <Form.Item 
                         name="courseId" 
@@ -966,13 +1136,30 @@ export default function Homeworks() {
                           ))}
                         </Select>
                       </Form.Item>
-                                <Form.Item 
-            name="dueDate" 
-            rules={[{ required: true, message: 'Due date required!' }]}
-            style={{ marginBottom: 0, width: 150 }}
-          >
-            <Input type="datetime-local" style={{ borderRadius: 8 }} />
-          </Form.Item>
+                      <Form.Item 
+                        name={formType === 'homework' ? 'dueDate' : 'examDate'} 
+                        rules={[{ required: true, message: formType === 'homework' ? 'Due date required!' : 'Exam date required!' }]}
+                        style={{ marginBottom: 0, width: 150 }}
+                      >
+                        <Input 
+                          type="datetime-local" 
+                          placeholder={formType === 'homework' ? 'Due Date' : 'Exam Date'}
+                          style={{ borderRadius: 8 }} 
+                        />
+                      </Form.Item>
+                      {formType === 'exam' && (
+                        <Form.Item 
+                          name="examType" 
+                          style={{ marginBottom: 0, width: 120 }}
+                        >
+                          <Select placeholder="Type" style={{ borderRadius: 8 }}>
+                            <Select.Option value="Midterm">Midterm</Select.Option>
+                            <Select.Option value="Final">Final</Select.Option>
+                            <Select.Option value="Quiz">Quiz</Select.Option>
+                            <Select.Option value="Assignment">Assignment</Select.Option>
+                          </Select>
+                        </Form.Item>
+                      )}
                       <Form.Item 
                         name="status" 
                         initialValue="PENDING"
@@ -993,110 +1180,140 @@ export default function Homeworks() {
                           loading={addingHomework}
                           style={{ 
                             borderRadius: 8, 
-                            background: '#1976d2', 
-                            borderColor: '#1976d2'
+                            background: formType === 'homework' ? '#1976d2' : '#9c27b0', 
+                            borderColor: formType === 'homework' ? '#1976d2' : '#9c27b0'
                           }}
                         >
-                          Add
+                          Add {formType === 'homework' ? 'Homework' : 'Exam'}
                         </Button>
                       </Form.Item>
                     </Form>
                   </div>
                   
-                  {/* Filter and Sort Controls */}
+                  {/* Filter Toggle Button */}
                   <div style={{ 
                     display: 'flex', 
-                    gap: 16, 
-                    alignItems: 'center', 
-                    marginBottom: 16,
-                    padding: '16px',
-                    background: '#f8f9fa',
-                    borderRadius: 8,
-                    border: '1px solid #e9ecef'
+                    justifyContent: 'flex-start', 
+                    marginBottom: 8,
+                    padding: '8px'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Text strong style={{ fontSize: 14 }}>Filter by:</Text>
-                      <Select
-                        placeholder="Status"
-                        style={{ width: 120 }}
-                        value={statusFilter}
-                        onChange={setStatusFilter}
-                      >
-                        <Option value="all">All Status</Option>
-                        <Option value="PENDING">Pending</Option>
-                        <Option value="IN_PROGRESS">In Progress</Option>
-                        <Option value="COMPLETED">Completed</Option>
-                        <Option value="OVERDUE">Overdue</Option>
-                      </Select>
-                    </div>
-                    
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Text strong style={{ fontSize: 14 }}>Course:</Text>
-                      <Select
-                        placeholder="Course"
-                        style={{ width: 150 }}
-                        value={courseFilter}
-                        onChange={setCourseFilter}
-                      >
-                        <Option value="all">All Courses</Option>
-                        {currentSemesterCourses.map(course => (
-                          <Option key={course.id} value={course.id.toString()}>
-                            {course.name}
-                          </Option>
-                        ))}
-                      </Select>
-                    </div>
-                    
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Text strong style={{ fontSize: 14 }}>Sort by:</Text>
-                      <Select
-                        style={{ width: 120 }}
-                        value={sortBy}
-                        onChange={setSortBy}
-                      >
-                        <Option value="dueDate">Due Date</Option>
-                        <Option value="title">Title</Option>
-                        <Option value="course">Course</Option>
-                        <Option value="status">Status</Option>
-                        <Option value="grade">Grade</Option>
-                      </Select>
-                    </div>
-                    
                     <Button
                       type="text"
-                      icon={sortOrder === "ascend" ? "↑" : "↓"}
-                      onClick={() => setSortOrder(sortOrder === "ascend" ? "descend" : "ascend")}
+                      icon={<FilterOutlined />}
+                      onClick={() => setShowFilters(!showFilters)}
                       style={{ 
                         color: '#1976d2',
-                        fontWeight: 'bold',
-                        fontSize: 16
+                        fontSize: 12,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4
                       }}
                     >
-                      {sortOrder === "ascend" ? "Ascending" : "Descending"}
-                    </Button>
-                    
-                    <Button
-                      type="text"
-                      onClick={() => {
-                        setStatusFilter("all");
-                        setCourseFilter("all");
-                        setSortBy("dueDate");
-                        setSortOrder("ascend");
-                      }}
-                      style={{ color: '#666' }}
-                    >
-                      Clear Filters
+                      {showFilters ? 'Hide Filters' : 'Show Filters'}
+                      {showFilters ? <UpOutlined /> : <DownOutlined />}
                     </Button>
                   </div>
+
+                  {/* Filter and Sort Controls */}
+                  {showFilters && (
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: 16, 
+                      alignItems: 'center', 
+                      marginBottom: 16,
+                      padding: '16px',
+                      background: '#f8f9fa',
+                      borderRadius: 8,
+                      border: '1px solid #e9ecef'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Text strong style={{ fontSize: 14 }}>Filter by:</Text>
+                        <Select
+                          placeholder="Status"
+                          style={{ width: 120 }}
+                          value={statusFilter}
+                          onChange={setStatusFilter}
+                        >
+                          <Option value="all">All Status</Option>
+                          <Option value="PENDING">Pending</Option>
+                          <Option value="IN_PROGRESS">In Progress</Option>
+                          <Option value="COMPLETED">Completed</Option>
+                          <Option value="OVERDUE">Overdue</Option>
+                        </Select>
+                      </div>
+                      
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Text strong style={{ fontSize: 14 }}>Course:</Text>
+                        <Select
+                          placeholder="Course"
+                          style={{ width: 150 }}
+                          value={courseFilter}
+                          onChange={setCourseFilter}
+                        >
+                          <Option value="all">All Courses</Option>
+                          {currentSemesterCourses.map(course => (
+                            <Option key={course.id} value={course.id.toString()}>
+                              {course.name}
+                            </Option>
+                          ))}
+                        </Select>
+                      </div>
+                      
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Text strong style={{ fontSize: 14 }}>Sort by:</Text>
+                        <Select
+                          style={{ width: 120 }}
+                          value={sortBy}
+                          onChange={setSortBy}
+                        >
+                          <Option value="dueDate">Due Date</Option>
+                          <Option value="title">Title</Option>
+                          <Option value="course">Course</Option>
+                          <Option value="status">Status</Option>
+                          <Option value="grade">Grade</Option>
+                        </Select>
+                      </div>
+                      
+                      <Button
+                        type="text"
+                        icon={sortOrder === "ascend" ? "↑" : "↓"}
+                        onClick={() => setSortOrder(sortOrder === "ascend" ? "descend" : "ascend")}
+                        style={{ 
+                          color: '#1976d2',
+                          fontWeight: 'bold',
+                          fontSize: 16
+                        }}
+                      >
+                        {sortOrder === "ascend" ? "Ascending" : "Descending"}
+                      </Button>
+                      
+                      <Button
+                        type="text"
+                        onClick={() => {
+                          setStatusFilter("all");
+                          setCourseFilter("all");
+                          setSortBy("dueDate");
+                          setSortOrder("ascend");
+                        }}
+                        style={{ color: '#666' }}
+                      >
+                        Clear Filters
+                      </Button>
+                    </div>
+                  )}
                   
-                  {/* Homework Table */}
+                  {/* Combined Assignments Table */}
                   <Table
                     columns={columns}
-                    dataSource={filteredAndSortedHomeworks}
+                    dataSource={[...filteredAndSortedHomeworks, ...exams.map(exam => ({
+                      ...exam,
+                      dueDate: exam.examDate, // Map exam date to due date for consistency
+                      type: 'exam'
+                    }))]}
                     loading={loading}
                     rowKey="id"
                     pagination={false}
-                    scroll={{ y: Math.max(200, filteredAndSortedHomeworks.length * 50 + 100) }}
+                    scroll={{ y: Math.max(200, (filteredAndSortedHomeworks.length + exams.length) * 50 + 100) }}
                     style={{ marginTop: 0 }}
                   />
                 </div>

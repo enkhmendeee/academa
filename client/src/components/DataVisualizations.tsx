@@ -79,50 +79,7 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
         </Col>
       </Row>
 
-      {/* Exam Statistics Cards */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} md={6}>
-          <Card style={{ textAlign: 'center', borderRadius: 12 }}>
-            <Statistic
-              title="Total Exams"
-              value={totalExams}
-              prefix={<BookOutlined style={{ color: '#9c27b0' }} />}
-              valueStyle={{ color: '#9c27b0' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card style={{ textAlign: 'center', borderRadius: 12 }}>
-            <Statistic
-              title="Completed Exams"
-              value={completedExams}
-              prefix={<CheckCircleOutlined style={{ color: '#43a047' }} />}
-              valueStyle={{ color: '#43a047' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card style={{ textAlign: 'center', borderRadius: 12 }}>
-            <Statistic
-              title="Upcoming Exams"
-              value={upcomingExams}
-              prefix={<ClockCircleOutlined style={{ color: '#ffa726' }} />}
-              valueStyle={{ color: '#ffa726' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card style={{ textAlign: 'center', borderRadius: 12 }}>
-            <Statistic
-              title="Average Grade"
-              value={averageExamGrade.toFixed(1)}
-              suffix="%"
-              prefix={<BookOutlined style={{ color: '#1976d2' }} />}
-              valueStyle={{ color: '#1976d2' }}
-            />
-          </Card>
-        </Col>
-      </Row>
+
 
       {/* Charts Row */}
       <Row gutter={[24, 24]}>
@@ -165,11 +122,11 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
                   return acc;
                 }, {} as Record<string, any[]>);
 
-                // Course colors for consistent coloring
-                const courseColors = [
-                  '#1976d2', '#43a047', '#ff9800', '#e91e63',
-                  '#9c27b0', '#00bcd4', '#ff5722', '#4caf50'
-                ];
+                // Get course colors from actual course data
+                const courseColors = Object.keys(deadlinesByCourse).map(courseName => {
+                  const course = courses.find(c => c.name === courseName);
+                  return course?.color || '#1976d2';
+                });
 
                 return { deadlinesByCourse, courseColors, allDeadlines };
               };
@@ -395,7 +352,7 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
                         width: 8,
                         height: 8,
                         borderRadius: '50%',
-                        backgroundColor: '#9c27b0'
+                        backgroundColor: course?.color || '#9c27b0'
                       }} />
                     </div>
                   );
@@ -473,17 +430,20 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
                         />
                       ))}
                       {/* Exam indicators */}
-                      {dayExams.slice(0, 2).map((exam) => (
-                        <div
-                          key={`exam-${exam.id}`}
-                          style={{
-                            width: '4px',
-                            height: '4px',
-                            borderRadius: '50%',
-                            backgroundColor: '#9c27b0'
-                          }}
-                        />
-                      ))}
+                      {dayExams.slice(0, 2).map((exam) => {
+                        const course = courses.find(c => c.id === exam.courseId);
+                        return (
+                          <div
+                            key={`exam-${exam.id}`}
+                            style={{
+                              width: '4px',
+                              height: '4px',
+                              borderRadius: '50%',
+                              backgroundColor: course?.color || '#9c27b0'
+                            }}
+                          />
+                        );
+                      })}
                       {totalItems > 4 && (
                         <Text style={{ fontSize: 8, color: '#999' }}>
                           +{totalItems - 4}

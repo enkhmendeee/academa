@@ -136,9 +136,6 @@ export default function Courses() {
       case "homeworks":
         navigate("/homeworks");
         break;
-      case "exams":
-        navigate("/exams");
-        break;
     }
   };
 
@@ -193,9 +190,6 @@ export default function Courses() {
           </Menu.Item>
           <Menu.Item key="homeworks" icon={<FileTextOutlined style={{ color: "#1976d2" }} />}>
             Homeworks
-          </Menu.Item>
-          <Menu.Item key="exams" icon={<CalendarOutlined style={{ color: "#1976d2" }} />}>
-            Exams
           </Menu.Item>
         </Menu>
       </Sider>

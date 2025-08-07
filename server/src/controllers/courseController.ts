@@ -2,13 +2,13 @@ import { Request, Response } from "express";
 import prisma from "../config/prisma";;
 
 export const createCourse = async (req: Request, res: Response) => {
-  const { name, semester } = req.body;
+  const { name, semester, color } = req.body;
   const userId = req.user && req.user.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   try {
     const course = await prisma.course.create({
-      data: { name, semester, userId },
+      data: { name, semester, color, userId },
     });
 
     res.status(201).json(course);
@@ -63,7 +63,7 @@ export const deleteCourse = async (req: Request, res: Response) => {
 export const updateCourse = async (req: Request, res: Response) => {
   const courseId = parseInt(req.params.id);
   const userId = req.user.id;
-  const { name, description, semester } = req.body;
+  const { name, description, semester, color } = req.body;
 
   try {
     const course = await prisma.course.findFirst({
@@ -80,6 +80,7 @@ export const updateCourse = async (req: Request, res: Response) => {
         ...(name && { name }),
         ...(description !== undefined && { description }),
         ...(semester && { semester }),
+        ...(color && { color }),
       },
     });
 

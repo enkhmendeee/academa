@@ -5,8 +5,8 @@ export const getCourses = async () => {
   return res.data;
 };
 
-export const createCourse = async (name: string, semester?: string) => {
-  const res = await api.post("/courses", { name, semester });
+export const createCourse = async (name: string, semester?: string, color?: string) => {
+  const res = await api.post("/courses", { name, semester, color });
   return res.data;
 };
 

@@ -5,7 +5,6 @@ import Register from "./pages/Register";
 import Home from "./pages/Home";
 import Courses from "./pages/Courses";
 import Homeworks from "./pages/Homeworks";
-import Exams from "./pages/Exams";
 import PrivateRoute from "./components/PrivateRoute";
 import { AuthProvider } from "./context/AuthContext";
 import 'antd/dist/reset.css';
@@ -38,14 +37,6 @@ function App() {
           element={
             <PrivateRoute>
               <Homeworks />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/exams" 
-          element={
-            <PrivateRoute>
-              <Exams />
             </PrivateRoute>
           } 
         />

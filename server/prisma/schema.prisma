@@ -31,6 +31,7 @@ model Course {
   name        String
   description String?
   semester    String?
+  color       String? @default("#1976d2")
   userId      Int
   user        User    @relation(fields: [userId], references: [id])
   homeworks   Homework[]
