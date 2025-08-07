@@ -177,26 +177,61 @@ export default function Courses() {
         }}>
           Academa
         </div>
-        <Menu
+                <Menu
           mode="inline"
           selectedKeys={["courses"]}
           style={{ 
             background: "transparent", 
-            border: "none",
-            color: "#ffffff"
+            border: "none"
           }}
-          className="sidebar-menu"
           onClick={handleMenuClick}
         >
-                      <Menu.Item key="home" icon={<HomeOutlined style={{ color: "#ffffff" }} />}>
-              Home
-            </Menu.Item>
-            <Menu.Item key="courses" icon={<BookOutlined style={{ color: "#ffffff" }} />}>
-              Courses
-            </Menu.Item>
-            <Menu.Item key="homeworks" icon={<FileTextOutlined style={{ color: "#ffffff" }} />}>
-              Homeworks
-            </Menu.Item>
+          <Menu.Item 
+            key="home" 
+            icon={<HomeOutlined style={{ color: "#ffffff", fontSize: "18px" }} />}
+            style={{ 
+              fontSize: "16px", 
+              fontWeight: "500", 
+              color: "#ffffff",
+              margin: "8px 16px",
+              borderRadius: "8px",
+              height: "48px",
+              lineHeight: "48px"
+            }}
+          >
+            Home
+          </Menu.Item>
+          <Menu.Item 
+            key="courses" 
+            icon={<BookOutlined style={{ color: "#1976d2", fontSize: "18px" }} />}
+            style={{ 
+              fontSize: "16px", 
+              fontWeight: "500", 
+              color: "#1976d2",
+              margin: "8px 16px",
+              borderRadius: "8px",
+              height: "48px",
+              lineHeight: "48px",
+              background: "#ffffff"
+            }}
+          >
+            Courses
+          </Menu.Item>
+          <Menu.Item 
+            key="homeworks" 
+            icon={<FileTextOutlined style={{ color: "#ffffff", fontSize: "18px" }} />}
+            style={{ 
+              fontSize: "16px", 
+              fontWeight: "500", 
+              color: "#ffffff",
+              margin: "8px 16px",
+              borderRadius: "8px",
+              height: "48px",
+              lineHeight: "48px"
+            }}
+          >
+            Homeworks
+          </Menu.Item>
         </Menu>
       </Sider>
       {/* Main Layout */}
