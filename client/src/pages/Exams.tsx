@@ -81,7 +81,7 @@ export default function Exams() {
   const [nextExam, setNextExam] = useState<any>(null);
 
   // Modal states
-  const [examModalVisible, setExamModalVisible] = useState(false);
+
   const [courseModalVisible, setCourseModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [examToDelete, setExamToDelete] = useState<any>(null);
@@ -164,13 +164,12 @@ export default function Exams() {
       setLoading(true);
       const examData = {
         ...values,
-        examDate: values.examDate.toISOString(),
+        examDate: new Date(values.examDate).toISOString(),
         duration: values.duration ? parseInt(values.duration) : null
       };
       
       await createExam(examData);
       message.success('Exam created successfully');
-      setExamModalVisible(false);
       examForm.resetFields();
       fetchExams();
     } catch (error) {
@@ -490,21 +489,7 @@ export default function Exams() {
               }}
             />
           </Tooltip>
-          <Tooltip title="Edit">
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              onClick={() => {
-                setEditingExam(record.id);
-                examForm.setFieldsValue({
-                  ...record,
-                  examDate: dayjs(record.examDate),
-                  duration: record.duration?.toString()
-                });
-                setExamModalVisible(true);
-              }}
-            />
-          </Tooltip>
+
           <Tooltip title="Delete">
             <Button
               type="text"
@@ -951,26 +936,13 @@ export default function Exams() {
                 </Select>
               </Col>
               <Col xs={24} sm={12} md={6}>
-                <Space>
-                  <Button
-                    icon={<ReloadOutlined />}
-                    onClick={fetchExams}
-                    loading={loading}
-                  >
-                    Refresh
-                  </Button>
-                  <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={() => {
-                      setEditingExam(null);
-                      examForm.resetFields();
-                      setExamModalVisible(true);
-                    }}
-                  >
-                    Add Exam
-                  </Button>
-                </Space>
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={fetchExams}
+                  loading={loading}
+                >
+                  Refresh
+                </Button>
               </Col>
             </Row>
           </Card>
@@ -982,135 +954,205 @@ export default function Exams() {
             border: 'none',
             background: 'white'
           }}>
-            <Table
-              columns={columns}
-              dataSource={filteredExams}
-              rowKey="id"
-              loading={loading}
-              pagination={{
-                pageSize: 10,
-                showSizeChanger: true,
-                showQuickJumper: true,
-                showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} exams`
-              }}
-              onChange={(pagination, filters, sorter: any) => {
-                if (sorter && !Array.isArray(sorter) && sorter.key) {
-                  setSortBy(sorter.key as string);
-                  setSortOrder(sorter.order || 'ascend');
-                }
-              }}
-            />
-          </Card>
-        </Content>
-      </Layout>
-
-      {/* Add/Edit Exam Modal */}
-      <Modal
-        title={editingExam ? "Edit Exam" : "Add New Exam"}
-        open={examModalVisible}
-        onCancel={() => setExamModalVisible(false)}
-        footer={null}
-        width={600}
-      >
-        <Form
-          form={examForm}
-          layout="vertical"
-          onFinish={editingExam ? (values) => handleUpdateExam(editingExam, values) : handleAddExam}
-        >
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="title"
-                label="Exam Title"
-                rules={[{ required: true, message: 'Please enter exam title' }]}
+            {/* Add Exam Form */}
+            <div style={{ 
+              padding: '16px', 
+              background: '#f8f9fa',
+              borderBottom: '1px solid #f0f0f0',
+              borderTop: '1px solid #f0f0f0'
+            }}>
+              <Form 
+                form={examForm} 
+                layout="inline" 
+                onFinish={handleAddExam}
+                style={{ display: 'flex', gap: 8, alignItems: 'center' }}
               >
-                <Input placeholder="Enter exam title" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="examType"
-                label="Exam Type"
-              >
-                <Select placeholder="Select exam type">
+                <Form.Item 
+                  name="title" 
+                  rules={[{ required: true, message: 'Title required!' }]}
+                  style={{ marginBottom: 0, flex: 1 }}
+                >
+                  <Input placeholder="Exam Title" style={{ borderRadius: 8 }} />
+                </Form.Item>
+                <Form.Item 
+                  name="courseId" 
+                  rules={[{ required: true, message: 'Course required!' }]}
+                  style={{ marginBottom: 0, width: 150 }}
+                >
+                  <Select placeholder="Select Course" style={{ borderRadius: 8 }}>
+                    {courses.map(c => (
+                      <Select.Option key={c.id} value={c.id}>
+                        {c.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <Form.Item 
+                  name="examDate" 
+                  rules={[{ required: true, message: 'Date required!' }]}
+                  style={{ marginBottom: 0, width: 150 }}
+                >
+                  <Input type="datetime-local" style={{ borderRadius: 8 }} />
+                </Form.Item>
+                <Form.Item 
+                  name="examType" 
+                  style={{ marginBottom: 0, width: 120 }}
+                >
+                  <Select placeholder="Type" style={{ borderRadius: 8 }}>
+                    <Select.Option value="Midterm">Midterm</Select.Option>
+                    <Select.Option value="Final">Final</Select.Option>
+                    <Select.Option value="Quiz">Quiz</Select.Option>
+                    <Select.Option value="Assignment">Assignment</Select.Option>
+                  </Select>
+                </Form.Item>
+                <Form.Item 
+                  name="status" 
+                  initialValue="PENDING"
+                  style={{ marginBottom: 0, width: 120 }}
+                >
+                  <Select style={{ borderRadius: 8 }}>
+                    <Select.Option value="PENDING">Pending</Select.Option>
+                    <Select.Option value="IN_PROGRESS">In Progress</Select.Option>
+                    <Select.Option value="COMPLETED">Completed</Select.Option>
+                    <Select.Option value="OVERDUE">Overdue</Select.Option>
+                  </Select>
+                </Form.Item>
+                <Form.Item style={{ marginBottom: 0 }}>
+                  <Button 
+                    type="primary" 
+                    htmlType="submit" 
+                    icon={<PlusOutlined />}
+                    loading={loading}
+                    style={{ 
+                      borderRadius: 8, 
+                      background: '#1976d2', 
+                      borderColor: '#1976d2'
+                    }}
+                  >
+                    Add
+                  </Button>
+                </Form.Item>
+              </Form>
+            </div>
+            
+            {/* Filter and Sort Controls */}
+            <div style={{ 
+              display: 'flex', 
+              gap: 16, 
+              alignItems: 'center', 
+              marginBottom: 16,
+              padding: '16px',
+              background: '#f8f9fa',
+              borderRadius: 8,
+              border: '1px solid #e9ecef'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Text strong style={{ fontSize: 14 }}>Filter by:</Text>
+                <Select
+                  placeholder="Status"
+                  style={{ width: 120 }}
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                >
+                  <Option value="all">All Status</Option>
+                  <Option value="PENDING">Pending</Option>
+                  <Option value="IN_PROGRESS">In Progress</Option>
+                  <Option value="COMPLETED">Completed</Option>
+                  <Option value="OVERDUE">Overdue</Option>
+                </Select>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Text strong style={{ fontSize: 14 }}>Course:</Text>
+                <Select
+                  placeholder="Course"
+                  style={{ width: 150 }}
+                  value={courseFilter}
+                  onChange={setCourseFilter}
+                >
+                  <Option value="all">All Courses</Option>
+                  {courses.map(course => (
+                    <Option key={course.id} value={course.id.toString()}>
+                      {course.name}
+                    </Option>
+                  ))}
+                </Select>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Text strong style={{ fontSize: 14 }}>Type:</Text>
+                <Select
+                  placeholder="Type"
+                  style={{ width: 120 }}
+                  value={examTypeFilter}
+                  onChange={setExamTypeFilter}
+                >
+                  <Option value="all">All Types</Option>
                   <Option value="Midterm">Midterm</Option>
                   <Option value="Final">Final</Option>
                   <Option value="Quiz">Quiz</Option>
                   <Option value="Assignment">Assignment</Option>
                 </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="examDate"
-                label="Exam Date & Time"
-                rules={[{ required: true, message: 'Please select exam date and time' }]}
-              >
-                <DatePicker
-                  showTime
-                  style={{ width: '100%' }}
-                  placeholder="Select date and time"
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="courseId"
-                label="Course"
-                rules={[{ required: true, message: 'Please select a course' }]}
-              >
-                <Select placeholder="Select course">
-                  {courses.map(course => (
-                    <Option key={course.id} value={course.id}>
-                      {course.name}
-                    </Option>
-                  ))}
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Text strong style={{ fontSize: 14 }}>Sort by:</Text>
+                <Select
+                  style={{ width: 120 }}
+                  value={sortBy}
+                  onChange={setSortBy}
+                >
+                  <Option value="examDate">Date</Option>
+                  <Option value="title">Title</Option>
+                  <Option value="course">Course</Option>
+                  <Option value="status">Status</Option>
+                  <Option value="grade">Grade</Option>
                 </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="location"
-                label="Location"
+              </div>
+              
+              <Button
+                type="text"
+                icon={sortOrder === "ascend" ? "↑" : "↓"}
+                onClick={() => setSortOrder(sortOrder === "ascend" ? "descend" : "ascend")}
+                style={{ 
+                  color: '#1976d2',
+                  fontWeight: 'bold',
+                  fontSize: 16
+                }}
               >
-                <Input placeholder="Enter exam location" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="duration"
-                label="Duration (minutes)"
+                {sortOrder === "ascend" ? "Ascending" : "Descending"}
+              </Button>
+              
+              <Button
+                type="text"
+                onClick={() => {
+                  setStatusFilter("all");
+                  setCourseFilter("all");
+                  setExamTypeFilter("all");
+                  setSortBy("examDate");
+                  setSortOrder("ascend");
+                }}
+                style={{ color: '#666' }}
               >
-                <Input type="number" placeholder="Enter duration" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            name="description"
-            label="Description"
-          >
-            <TextArea rows={3} placeholder="Enter exam description" />
-          </Form.Item>
-
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit" loading={loading}>
-                {editingExam ? 'Update Exam' : 'Add Exam'}
+                Clear Filters
               </Button>
-              <Button onClick={() => setExamModalVisible(false)}>
-                Cancel
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Modal>
+            </div>
+            
+            {/* Exams Table */}
+            <Table
+              columns={columns}
+              dataSource={filteredExams}
+              rowKey="id"
+              loading={loading}
+              pagination={false}
+              scroll={{ y: Math.max(200, filteredExams.length * 50 + 100) }}
+              style={{ marginTop: 0 }}
+            />
+          </Card>
+        </Content>
+      </Layout>
+
+
 
       {/* Delete Confirmation Modal */}
       <Modal
