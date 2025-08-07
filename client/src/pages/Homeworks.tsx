@@ -29,29 +29,6 @@ const { Option } = Select;
 
 
 export default function Homeworks() {
-  // Add CSS animation for smooth slide-down effect
-  React.useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes slideDown {
-        from {
-          opacity: 0;
-          transform: translateY(-10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      if (document.head.contains(style)) {
-        document.head.removeChild(style);
-      }
-    };
-  }, []);
-
   const { token, user, login, logout, selectedSemester, setSelectedSemester } = useAuth();
   const navigate = useNavigate();
   const [homeworks, setHomeworks] = useState<any[]>([]);
@@ -82,6 +59,62 @@ export default function Homeworks() {
   
   // Filter visibility state
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Color picker dropdown state
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  
+  // Hide completed assignments toggle state
+  const [hideCompleted, setHideCompleted] = useState(true);
+  
+  // Handle hide completed toggle change
+  const handleHideCompletedChange = (newValue: boolean) => {
+    setHideCompleted(newValue);
+    // If turning ON hide completed and status filter is set to COMPLETED, reset it
+    if (newValue && statusFilter === "COMPLETED") {
+      setStatusFilter("all");
+    }
+  };
+
+  // Add CSS animation for smooth slide-down effect
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
+    };
+  }, []);
+
+  // Close color picker when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.color-picker-container')) {
+        setShowColorPicker(false);
+      }
+    };
+
+    if (showColorPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showColorPicker]);
   
   // Vibrant color palette for courses
   const vibrantColors = [
@@ -275,7 +308,10 @@ export default function Homeworks() {
       // Course filter
       const courseMatch = courseFilter === "all" || hw.courseId?.toString() === courseFilter;
       
-      return semesterMatch && statusMatch && courseMatch;
+      // Hide completed filter
+      const completedMatch = !hideCompleted || hw.status !== "COMPLETED";
+      
+      return semesterMatch && statusMatch && courseMatch && completedMatch;
     })
     .sort((a, b) => {
       let aValue: any, bValue: any;
@@ -302,6 +338,65 @@ export default function Homeworks() {
           // Default to dueDate sorting
           aValue = new Date(a.dueDate);
           bValue = new Date(b.dueDate);
+      }
+      
+      const compareValues = (a: any, b: any, order: "ascend" | "descend") => {
+        if (order === "ascend") {
+          if (a > b) return 1;
+          if (a < b) return -1;
+          return 0;
+        } else {
+          if (a < b) return 1;
+          if (a > b) return -1;
+          return 0;
+        }
+      };
+      
+      return compareValues(aValue, bValue, sortOrder);
+    });
+
+  // Filter and sort exams
+  const filteredAndSortedExams = exams
+    .filter(exam => {
+      // Semester filter
+      const semesterMatch = selectedSemester === "all" || (exam.semester || exam.course?.semester) === selectedSemester;
+      
+      // Status filter
+      const statusMatch = statusFilter === "all" || exam.status === statusFilter;
+      
+      // Course filter
+      const courseMatch = courseFilter === "all" || exam.courseId?.toString() === courseFilter;
+      
+      // Hide completed filter
+      const completedMatch = !hideCompleted || exam.status !== "COMPLETED";
+      
+      return semesterMatch && statusMatch && courseMatch && completedMatch;
+    })
+    .sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (sortBy) {
+        case "title":
+          aValue = a.title?.toLowerCase();
+          bValue = b.title?.toLowerCase();
+          break;
+        case "course":
+          aValue = a.course?.name?.toLowerCase();
+          bValue = b.course?.name?.toLowerCase();
+          break;
+        case "status":
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        case "grade":
+          aValue = a.grade || 0;
+          bValue = b.grade || 0;
+          break;
+        case "dueDate":
+        default:
+          // Default to dueDate sorting
+          aValue = new Date(a.examDate);
+          bValue = new Date(b.examDate);
       }
       
       const compareValues = (a: any, b: any, order: "ascend" | "descend") => {
@@ -961,24 +1056,93 @@ export default function Homeworks() {
                         size="large"
                       />
                       
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        {vibrantColors.map((color, index) => (
-                          <div
-                            key={index}
-                            onClick={() => setCourseColor(color)}
-                            style={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: '50%',
-                              backgroundColor: color,
-                              border: courseColor === color ? '3px solid #333' : '2px solid #fff',
-                              cursor: 'pointer',
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                              transition: 'all 0.2s ease'
-                            }}
-                            title={`Select ${color}`}
-                          />
-                        ))}
+                      <div style={{ position: 'relative' }} className="color-picker-container">
+                        <div
+                          onClick={() => setShowColorPicker(!showColorPicker)}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'scale(1.1)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'scale(1)';
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+                          }}
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: '50%',
+                            backgroundColor: courseColor,
+                            border: '3px solid #fff',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            userSelect: 'none',
+                            outline: 'none'
+                          }}
+                          tabIndex={-1}
+                        >
+                          <div style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            backgroundColor: '#fff',
+                            opacity: 0.8
+                          }} />
+                        </div>
+                        
+                        {showColorPicker && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            zIndex: 1000,
+                            backgroundColor: '#fff',
+                            borderRadius: '12px',
+                            padding: '12px',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                            border: '1px solid #e3f2fd',
+                            marginTop: '8px',
+                            animation: 'slideDown 0.3s ease-out'
+                          }}>
+                            <div style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(4, 1fr)',
+                              gap: '8px',
+                              width: '200px'
+                            }}>
+                              {vibrantColors.map((color, index) => (
+                                <div
+                                  key={index}
+                                  onClick={() => {
+                                    setCourseColor(color);
+                                    setShowColorPicker(false);
+                                  }}
+                                  style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '50%',
+                                    backgroundColor: color,
+                                    border: courseColor === color ? '3px solid #333' : '2px solid #fff',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'scale(1.1)';
+                                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                                  }}
+                                  title={`Select ${color}`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                       
                       <Button 
@@ -1193,7 +1357,8 @@ export default function Homeworks() {
                   {/* Filter Toggle Button */}
                   <div style={{ 
                     display: 'flex', 
-                    justifyContent: 'flex-start', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
                     marginBottom: 8,
                     padding: '8px'
                   }}>
@@ -1212,6 +1377,26 @@ export default function Homeworks() {
                       {showFilters ? 'Hide Filters' : 'Show Filters'}
                       {showFilters ? <UpOutlined /> : <DownOutlined />}
                     </Button>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Text style={{ fontSize: 12, color: '#666' }}>Completed assignments:</Text>
+                      <Button
+                        type={hideCompleted ? 'primary' : 'default'}
+                        size="small"
+                        onClick={() => handleHideCompletedChange(!hideCompleted)}
+                        style={{ 
+                          fontSize: 11,
+                          height: 24,
+                          padding: '0 8px',
+                          borderRadius: 12,
+                          background: hideCompleted ? '#1976d2' : '#f0f0f0',
+                          borderColor: hideCompleted ? '#1976d2' : '#d9d9d9',
+                          color: hideCompleted ? 'white' : '#666'
+                        }}
+                      >
+                        {hideCompleted ? 'Hide' : 'Show'}
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Filter and Sort Controls */}
@@ -1237,7 +1422,7 @@ export default function Homeworks() {
                           <Option value="all">All Status</Option>
                           <Option value="PENDING">Pending</Option>
                           <Option value="IN_PROGRESS">In Progress</Option>
-                          <Option value="COMPLETED">Completed</Option>
+                          <Option value="COMPLETED" disabled={hideCompleted}>Completed</Option>
                           <Option value="OVERDUE">Overdue</Option>
                         </Select>
                       </div>
@@ -1305,7 +1490,7 @@ export default function Homeworks() {
                   {/* Combined Assignments Table */}
                   <Table
                     columns={columns}
-                    dataSource={[...filteredAndSortedHomeworks, ...exams.map(exam => ({
+                    dataSource={[...filteredAndSortedHomeworks, ...filteredAndSortedExams.map(exam => ({
                       ...exam,
                       dueDate: exam.examDate, // Map exam date to due date for consistency
                       type: 'exam'
@@ -1313,7 +1498,6 @@ export default function Homeworks() {
                     loading={loading}
                     rowKey="id"
                     pagination={false}
-                    scroll={{ y: Math.max(200, (filteredAndSortedHomeworks.length + exams.length) * 50 + 100) }}
                     style={{ marginTop: 0 }}
                   />
                 </div>
