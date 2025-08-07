@@ -11,7 +11,7 @@ import {
   CheckOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { getHomeworks } from "../services/homework";
 import { getCourses } from "../services/course";
@@ -25,7 +25,6 @@ const { Option } = Select;
 export default function Home() {
   const { token, user, login, logout } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [homeworks, setHomeworks] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [exams, setExams] = useState<any[]>([]);

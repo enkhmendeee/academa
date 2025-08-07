@@ -9,7 +9,6 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  CheckOutlined,
   LogoutOutlined,
   ClockCircleOutlined,
   UserOutlined,
@@ -29,6 +28,7 @@ import {
   PauseCircleOutlined,
   StopOutlined,
   SearchOutlined,
+  CheckOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -660,6 +660,12 @@ export default function Exams() {
           <button 
             type="button"
             aria-label="Close profile popup"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape' || e.key === 'Enter') {
+                setProfileVisible(false);
+              }
+            }}
             style={{
               position: 'fixed',
               top: 0,
