@@ -10,7 +10,6 @@ import {
   EditOutlined,
   CheckOutlined,
   DeleteOutlined,
-  PlusOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -141,7 +140,7 @@ export default function Courses() {
         navigate("/homeworks");
         break;
       case "exams":
-        navigate("/dashboard");
+        navigate("/exams");
         break;
     }
   };
@@ -491,7 +490,7 @@ export default function Courses() {
                   };
 
                   return courseDistribution.length > 0 ? (
-                    <div style={{ textAlign: 'center' }}>
+                    <div style={{ textAlign: 'center', minHeight: 350 }}>
                       <ReactApexChart
                         options={pieChartOptions}
                         series={courseDistribution.map(course => course.value)}
@@ -507,7 +506,7 @@ export default function Courses() {
                     </div>
                   ) : (
                     <div style={{ 
-                      height: 200, 
+                      height: 350, 
                       display: "flex", 
                       alignItems: "center", 
                       justifyContent: "center",
@@ -594,7 +593,7 @@ export default function Courses() {
                       };
 
                       return courseData.length > 0 ? (
-                        <div style={{ textAlign: 'center' }}>
+                        <div style={{ textAlign: 'center', minHeight: 350 }}>
                           <ReactApexChart
                             options={barChartOptions}
                             series={[
@@ -627,7 +626,7 @@ export default function Courses() {
                         </div>
                       ) : (
                         <div style={{ 
-                          height: 200, 
+                          height: 350, 
                           display: "flex", 
                           alignItems: "center", 
                           justifyContent: "center",

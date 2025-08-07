@@ -23,6 +23,7 @@ model User {
   createdAt DateTime @default(now())
   courses   Course[]
   homeworks Homework[]
+  exams     Exam[]
 }
 
 model Course {
@@ -33,6 +34,7 @@ model Course {
   userId      Int
   user        User    @relation(fields: [userId], references: [id])
   homeworks   Homework[]
+  exams       Exam[]
   createdAt   DateTime @default(now())
 }
 
@@ -57,4 +59,30 @@ model Homework {
   updatedAt   DateTime @updatedAt
   status      HomeworkStatus @default(PENDING)
   grade       Int?
+}
+
+enum ExamStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+model Exam {
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String?
+  examDate    DateTime
+  semester    String?
+  course      Course  @relation(fields: [courseId], references: [id])
+  courseId    Int
+  user        User    @relation(fields: [userId], references: [id])
+  userId      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  status      ExamStatus @default(PENDING)
+  grade       Int?
+  examType    String? // e.g., "Midterm", "Final", "Quiz", "Assignment"
+  location    String? // exam location/room
+  duration    Int?    // duration in minutes
 }

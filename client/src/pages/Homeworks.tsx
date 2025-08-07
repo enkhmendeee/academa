@@ -166,7 +166,7 @@ export default function Homeworks() {
         navigate("/homeworks");
         break;
       case "exams":
-        navigate("/dashboard");
+        navigate("/exams");
         break;
     }
   };

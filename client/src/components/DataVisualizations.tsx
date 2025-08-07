@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import ReactApexChart from 'react-apexcharts';
-import { Card, Row, Col, Typography, Statistic, Button } from 'antd';
+import { Card, Row, Col, Typography, Statistic, Button, Tag } from 'antd';
 import { CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, BookOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -8,9 +7,10 @@ const { Title, Text } = Typography;
 interface DataVisualizationsProps {
   homeworks: any[];
   courses: any[];
+  exams?: any[];
 }
 
-const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, courses }) => {
+const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, courses, exams = [] }) => {
   // Calendar state
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -22,6 +22,17 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
   const inProgressHomeworks = homeworks.filter(hw => hw.status === 'IN_PROGRESS').length;
   const overdueHomeworks = homeworks.filter(hw => hw.status === 'OVERDUE').length;
   const completionRate = totalHomeworks > 0 ? (completedHomeworks / totalHomeworks) * 100 : 0;
+
+  // Exam Statistics
+  const totalExams = exams.length;
+  const completedExams = exams.filter(exam => exam.status === 'COMPLETED').length;
+  const pendingExams = exams.filter(exam => exam.status === 'PENDING').length;
+  const inProgressExams = exams.filter(exam => exam.status === 'IN_PROGRESS').length;
+  const overdueExams = exams.filter(exam => exam.status === 'OVERDUE').length;
+  const upcomingExams = exams.filter(exam => new Date(exam.examDate) > new Date()).length;
+  const averageExamGrade = exams.filter(exam => exam.grade !== null).length > 0
+    ? exams.filter(exam => exam.grade !== null).reduce((sum, exam) => sum + exam.grade, 0) / exams.filter(exam => exam.grade !== null).length
+    : 0;
 
   // Get completion rate color
   const getCompletionRateColor = (rate: number) => {
@@ -239,6 +250,51 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
         </Col>
       </Row>
 
+      {/* Exam Statistics Cards */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12} md={6}>
+          <Card style={{ textAlign: 'center', borderRadius: 12 }}>
+            <Statistic
+              title="Total Exams"
+              value={totalExams}
+              prefix={<BookOutlined style={{ color: '#9c27b0' }} />}
+              valueStyle={{ color: '#9c27b0' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card style={{ textAlign: 'center', borderRadius: 12 }}>
+            <Statistic
+              title="Completed Exams"
+              value={completedExams}
+              prefix={<CheckCircleOutlined style={{ color: '#43a047' }} />}
+              valueStyle={{ color: '#43a047' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card style={{ textAlign: 'center', borderRadius: 12 }}>
+            <Statistic
+              title="Upcoming Exams"
+              value={upcomingExams}
+              prefix={<ClockCircleOutlined style={{ color: '#ffa726' }} />}
+              valueStyle={{ color: '#ffa726' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={6}>
+          <Card style={{ textAlign: 'center', borderRadius: 12 }}>
+            <Statistic
+              title="Average Grade"
+              value={averageExamGrade.toFixed(1)}
+              suffix="%"
+              prefix={<BookOutlined style={{ color: '#1976d2' }} />}
+              valueStyle={{ color: '#1976d2' }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
       {/* Charts Row */}
       <Row gutter={[24, 24]}>
         {/* Upcoming Deadlines */}
@@ -257,15 +313,25 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
                 return dueDate >= now && dueDate <= thirtyDaysFromNow;
               }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
-              // Group by course
-              const deadlinesByCourse = upcomingHomeworks.reduce((acc, hw) => {
-                const course = courses.find(c => c.id === hw.courseId);
+              const upcomingExams = exams.filter(exam => {
+                const examDate = new Date(exam.examDate);
+                return examDate >= now && examDate <= thirtyDaysFromNow;
+              }).sort((a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime());
+
+              // Combine and group by course
+              const allDeadlines = [
+                ...upcomingHomeworks.map(hw => ({ ...hw, type: 'homework', date: hw.dueDate })),
+                ...upcomingExams.map(exam => ({ ...exam, type: 'exam', date: exam.examDate }))
+              ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+              const deadlinesByCourse = allDeadlines.reduce((acc, item) => {
+                const course = courses.find(c => c.id === item.courseId);
                 const courseName = course?.name || 'Unknown Course';
                 
                 if (!acc[courseName]) {
                   acc[courseName] = [];
                 }
-                acc[courseName].push(hw);
+                acc[courseName].push(item);
                 return acc;
               }, {} as Record<string, any[]>);
 
@@ -275,7 +341,7 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
                 '#9c27b0', '#00bcd4', '#ff5722', '#4caf50'
               ];
 
-              return upcomingHomeworks.length > 0 ? (
+              return allDeadlines.length > 0 ? (
                 <div>
                   {Object.entries(deadlinesByCourse).map(([courseName, courseHomeworks], index) => {
                     const typedCourseHomeworks = courseHomeworks as any[];
@@ -305,17 +371,25 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
                           </Text>
                         </div>
                         <div style={{ paddingLeft: 20 }}>
-                          {typedCourseHomeworks.slice(0, 3).map((hw: any) => (
-                            <div key={hw.id} style={{ 
+                          {typedCourseHomeworks.slice(0, 3).map((item: any) => (
+                            <div key={item.id} style={{ 
                               display: 'flex', 
                               justifyContent: 'space-between',
                               alignItems: 'center',
                               padding: '4px 0',
                               borderBottom: '1px solid #f0f0f0'
                             }}>
-                              <Text style={{ fontSize: 12 }}>{hw.title}</Text>
+                              <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <Text style={{ fontSize: 12 }}>{item.title}</Text>
+                                <Tag 
+                                  color={item.type === 'exam' ? 'purple' : 'blue'}
+                                  style={{ marginLeft: 8, fontSize: '10px' }}
+                                >
+                                  {item.type === 'exam' ? 'Exam' : 'HW'}
+                                </Tag>
+                              </div>
                               <Text type="secondary" style={{ fontSize: 11 }}>
-                                {new Date(hw.dueDate).toLocaleDateString()}
+                                {new Date(item.date).toLocaleDateString()}
                               </Text>
                             </div>
                           ))}
@@ -348,7 +422,7 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
                   justifyContent: "center",
                   color: '#999'
                 }}>
-                  <Text type="secondary">No upcoming deadlines in the next 30 days.</Text>
+                  <Text type="secondary">No upcoming homeworks or exams in the next 30 days.</Text>
                 </div>
               );
             })()}
@@ -362,11 +436,18 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
             style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
           >
             {(() => {
-              // Get homeworks for a specific date
+              // Get homeworks and exams for a specific date
               const getHomeworksForDate = (date: Date) => {
                 return homeworks.filter(hw => {
                   const hwDate = new Date(hw.dueDate);
                   return hwDate.toDateString() === date.toDateString();
+                });
+              };
+
+              const getExamsForDate = (date: Date) => {
+                return exams.filter(exam => {
+                  const examDate = new Date(exam.examDate);
+                  return examDate.toDateString() === date.toDateString();
                 });
               };
 
@@ -501,31 +582,52 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
                             {day.getDate()}
                           </Text>
                           
-                          {/* Homework indicators */}
-                          {dayHomeworks.length > 0 && (
-                            <div style={{ 
-                              display: 'flex', 
-                              gap: '2px',
-                              marginTop: '2px'
-                            }}>
-                              {dayHomeworks.slice(0, 3).map((hw, hwIndex) => (
-                                <div
-                                  key={hwIndex}
-                                  style={{
-                                    width: '4px',
-                                    height: '4px',
-                                    borderRadius: '50%',
-                                    backgroundColor: getStatusColor(hw.status)
-                                  }}
-                                />
-                              ))}
-                              {dayHomeworks.length > 3 && (
-                                <Text style={{ fontSize: 8, color: '#999' }}>
-                                  +{dayHomeworks.length - 3}
-                                </Text>
-                              )}
-                            </div>
-                          )}
+                          {/* Homework and Exam indicators */}
+                          {(() => {
+                            const dayExams = getExamsForDate(day);
+                            const totalItems = dayHomeworks.length + dayExams.length;
+                            
+                            if (totalItems > 0) {
+                              return (
+                                <div style={{ 
+                                  display: 'flex', 
+                                  gap: '2px',
+                                  marginTop: '2px'
+                                }}>
+                                  {/* Homework indicators */}
+                                  {dayHomeworks.slice(0, 2).map((hw, hwIndex) => (
+                                    <div
+                                      key={`hw-${hwIndex}`}
+                                      style={{
+                                        width: '4px',
+                                        height: '4px',
+                                        borderRadius: '50%',
+                                        backgroundColor: getStatusColor(hw.status)
+                                      }}
+                                    />
+                                  ))}
+                                  {/* Exam indicators */}
+                                  {dayExams.slice(0, 2).map((exam, examIndex) => (
+                                    <div
+                                      key={`exam-${examIndex}`}
+                                      style={{
+                                        width: '4px',
+                                        height: '4px',
+                                        borderRadius: '50%',
+                                        backgroundColor: '#9c27b0'
+                                      }}
+                                    />
+                                  ))}
+                                  {totalItems > 4 && (
+                                    <Text style={{ fontSize: 8, color: '#999' }}>
+                                      +{totalItems - 4}
+                                    </Text>
+                                  )}
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                       );
                     })}
@@ -548,64 +650,104 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
                           day: 'numeric' 
                         })}
                       </Text>
-                      {getHomeworksForDate(selectedDate).length > 0 ? (
-                        <div style={{ marginTop: 8 }}>
-                          {getHomeworksForDate(selectedDate).map(hw => {
-                            const course = courses.find(c => c.id === hw.courseId);
-                            return (
-                              <div key={hw.id} style={{ 
-                                display: 'flex', 
-                                justifyContent: 'space-between',
+                      {(() => {
+                        const selectedHomeworks = getHomeworksForDate(selectedDate);
+                        const selectedExams = getExamsForDate(selectedDate);
+                        const totalItems = selectedHomeworks.length + selectedExams.length;
+                        
+                        if (totalItems > 0) {
+                          return (
+                            <div style={{ marginTop: 8 }}>
+                              {/* Homeworks */}
+                              {selectedHomeworks.map(hw => {
+                                const course = courses.find(c => c.id === hw.courseId);
+                                return (
+                                  <div key={`hw-${hw.id}`} style={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    padding: '4px 0',
+                                    borderBottom: '1px solid #f0f0f0'
+                                  }}>
+                                    <div>
+                                      <Text style={{ fontSize: 12 }}>{hw.title}</Text>
+                                      <Tag color="blue" style={{ marginLeft: 4, fontSize: '10px' }}>HW</Tag>
+                                      <br />
+                                      <Text type="secondary" style={{ fontSize: 10 }}>
+                                        {course?.name || 'Unknown Course'}
+                                      </Text>
+                                    </div>
+                                    <div style={{
+                                      width: 8,
+                                      height: 8,
+                                      borderRadius: '50%',
+                                      backgroundColor: getStatusColor(hw.status)
+                                    }} />
+                                  </div>
+                                );
+                              })}
+                              {/* Exams */}
+                              {selectedExams.map(exam => {
+                                const course = courses.find(c => c.id === exam.courseId);
+                                return (
+                                  <div key={`exam-${exam.id}`} style={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    padding: '4px 0',
+                                    borderBottom: '1px solid #f0f0f0'
+                                  }}>
+                                    <div>
+                                      <Text style={{ fontSize: 12 }}>{exam.title}</Text>
+                                      <Tag color="purple" style={{ marginLeft: 4, fontSize: '10px' }}>Exam</Tag>
+                                      <br />
+                                      <Text type="secondary" style={{ fontSize: 10 }}>
+                                        {course?.name || 'Unknown Course'}
+                                      </Text>
+                                    </div>
+                                    <div style={{
+                                      width: 8,
+                                      height: 8,
+                                      borderRadius: '50%',
+                                      backgroundColor: '#9c27b0'
+                                    }} />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div style={{ 
+                              marginTop: 12, 
+                              textAlign: 'center',
+                              padding: '16px 8px'
+                            }}>
+                              <div style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: '50%',
+                                backgroundColor: '#f0f0f0',
+                                display: 'flex',
                                 alignItems: 'center',
-                                padding: '4px 0',
-                                borderBottom: '1px solid #f0f0f0'
+                                justifyContent: 'center',
+                                margin: '0 auto 8px',
+                                fontSize: 16,
+                                color: '#999'
                               }}>
-                                <div>
-                                  <Text style={{ fontSize: 12 }}>{hw.title}</Text>
-                                  <br />
-                                  <Text type="secondary" style={{ fontSize: 10 }}>
-                                    {course?.name || 'Unknown Course'}
-                                  </Text>
-                                </div>
-                                <div style={{
-                                  width: 8,
-                                  height: 8,
-                                  borderRadius: '50%',
-                                  backgroundColor: getStatusColor(hw.status)
-                                }} />
+                                ✓
                               </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div style={{ 
-                          marginTop: 12, 
-                          textAlign: 'center',
-                          padding: '16px 8px'
-                        }}>
-                          <div style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: '50%',
-                            backgroundColor: '#f0f0f0',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            margin: '0 auto 8px',
-                            fontSize: 16,
-                            color: '#999'
-                          }}>
-                            ✓
-                          </div>
-                          <Text type="secondary" style={{ 
-                            fontSize: 12, 
-                            color: '#666',
-                            fontStyle: 'italic'
-                          }}>
-                            No homeworks due on this date
-                          </Text>
-                        </div>
-                      )}
+                              <Text type="secondary" style={{ 
+                                fontSize: 12, 
+                                color: '#666',
+                                fontStyle: 'italic'
+                              }}>
+                                No items due on this date
+                              </Text>
+                            </div>
+                          );
+                        }
+                      })()}
                     </div>
                   )}
 
@@ -639,55 +781,6 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
           </Card>
         </Col>
 
-        {/* Monthly Progress Line Chart */}
-        <Col xs={24}>
-          <Card
-            title="Monthly Homework Progress"
-            style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-          >
-            <ReactApexChart
-              options={lineChartOptions}
-              series={[
-                {
-                  name: 'Total Homeworks',
-                  data: getMonthlyData().map(item => item.total)
-                },
-                {
-                  name: 'Completed',
-                  data: getMonthlyData().map(item => item.completed)
-                }
-              ]}
-              type="line"
-              height={300}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Completion Rate */}
-      <Row style={{ marginTop: 24 }}>
-        <Col span={24}>
-          <Card
-            title="Overall Completion Rate"
-            style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-          >
-            <div style={{ textAlign: 'center', padding: '20px' }}>
-              <Statistic
-                title="Completion Rate"
-                value={completionRate}
-                suffix="%"
-                valueStyle={{ 
-                  color: getCompletionRateColor(completionRate),
-                  fontSize: '48px',
-                  fontWeight: 'bold'
-                }}
-              />
-              <Text type="secondary" style={{ fontSize: '14px' }}>
-                {completedHomeworks} out of {totalHomeworks} homeworks completed
-              </Text>
-            </div>
-          </Card>
-        </Col>
       </Row>
     </div>
   );

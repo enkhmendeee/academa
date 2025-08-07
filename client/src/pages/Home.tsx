@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Menu, Typography, Card, Row, Col, Button, List, Tag, Dropdown, Input, message, Select, Statistic } from "antd";
+import { Layout, Menu, Typography, Card, Row, Col, Button, Input, message, Select} from "antd";
 import DataVisualizations from "../components/DataVisualizations";
 import {
   HomeOutlined,
@@ -7,18 +7,15 @@ import {
   FileTextOutlined,
   CalendarOutlined,
   SmileOutlined,
-  DownOutlined,
   EditOutlined,
   CheckOutlined,
   LogoutOutlined,
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { getHomeworks, updateHomework } from "../services/homework";
+import { getHomeworks } from "../services/homework";
 import { getCourses } from "../services/course";
+import { getExams } from "../services/exam";
 import { updateProfile } from "../services/auth";
 
 const { Sider, Header, Content } = Layout;
@@ -31,7 +28,8 @@ export default function Home() {
   const location = useLocation();
   const [homeworks, setHomeworks] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [exams, setExams] = useState<any[]>([]);
+
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
   const [profileVisible, setProfileVisible] = useState(false);
@@ -42,18 +40,18 @@ export default function Home() {
   // Fetch data
   const fetchData = async () => {
     if (!token) return;
-    setLoading(true);
     try {
-      const [homeworksData, coursesData] = await Promise.all([
+      const [homeworksData, coursesData, examsData] = await Promise.all([
         getHomeworks(),
-        getCourses()
+        getCourses(),
+        getExams()
       ]);
       setHomeworks(homeworksData);
       setCourses(coursesData);
+      setExams(examsData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -112,71 +110,12 @@ export default function Home() {
         navigate("/homeworks");
         break;
       case "exams":
-        navigate("/dashboard");
+        navigate("/exams");
         break;
     }
   };
 
-  // Get status color
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "COMPLETED":
-        return "#43a047";
-      case "IN_PROGRESS":
-        return "#ffa726";
-      case "OVERDUE":
-        return "#e53935";
-      case "PENDING":
-        return "#1976d2";
-      default:
-        return "#1976d2";
-    }
-  };
 
-  // Handle status change
-  const handleStatusChange = async (homeworkId: number, newStatus: string) => {
-    if (!token) return;
-    try {
-      await updateHomework(homeworkId, { status: newStatus });
-      // Refresh data after status update
-      fetchData();
-    } catch (error) {
-      console.error("Failed to update homework status:", error);
-    }
-  };
-
-  // Status dropdown menu items
-  const getStatusMenuItems = (homeworkId: number) => [
-    {
-      key: "PENDING",
-      label: "Pending",
-      onClick: () => handleStatusChange(homeworkId, "PENDING"),
-    },
-    {
-      key: "IN_PROGRESS",
-      label: "In Progress",
-      onClick: () => handleStatusChange(homeworkId, "IN_PROGRESS"),
-    },
-    {
-      key: "COMPLETED",
-      label: "Completed",
-      onClick: () => handleStatusChange(homeworkId, "COMPLETED"),
-    },
-    {
-      key: "OVERDUE",
-      label: "Overdue",
-      onClick: () => handleStatusChange(homeworkId, "OVERDUE"),
-    },
-  ];
-
-  // Filter due soon homeworks (due within 7 days)
-  const dueSoonHomeworks = homeworks.filter(hw => {
-    const dueDate = new Date(hw.dueDate);
-    const now = new Date();
-    const diffTime = dueDate.getTime() - now.getTime();
-    const diffDays = diffTime / (1000 * 60 * 60 * 24);
-    return diffDays <= 7 && diffDays >= 0;
-  }).slice(0, 3);
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -201,7 +140,7 @@ export default function Home() {
         </div>
         <Menu
           mode="inline"
-          selectedKeys={[location.pathname === "/" ? "home" : "dashboard"]}
+          selectedKeys={["home"]}
           style={{ background: "transparent", border: "none" }}
           onClick={handleMenuClick}
         >
@@ -411,7 +350,7 @@ export default function Home() {
 
             {/* Data Visualizations */}
             <Col span={24}>
-              <DataVisualizations homeworks={homeworks} courses={courses} />
+              <DataVisualizations homeworks={homeworks} courses={courses} exams={exams} />
             </Col>
           </Row>
         </Content>
