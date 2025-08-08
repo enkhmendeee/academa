@@ -9,6 +9,8 @@ import PrivateRoute from "./components/PrivateRoute";
 import { AuthProvider } from "./context/AuthContext";
 import 'antd/dist/reset.css';
 
+import { Analytics } from "@vercel/analytics/react"
+
 function App() {
   return (
     <AuthProvider>
