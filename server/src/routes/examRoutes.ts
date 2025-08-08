@@ -1,11 +1,10 @@
 import express, { Request, Response } from 'express';
-import { PrismaClient } from '../generated/prisma';
 import { body } from "express-validator";
 import { validateRequest } from "../middleware/validateRequest";
 import { authenticateToken } from "../middleware/authMiddleware";
+import prisma from "../config/prisma";
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Get all exams for the authenticated user
 router.get('/', authenticateToken, async (req: Request, res: Response) => {
