@@ -10,7 +10,9 @@ import cors from "cors";
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: 'http://localhost:5174', // Adjust this to your client URL
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://academa-9tytvwwd5-enkhmendeees-projects.vercel.app', 'http://localhost:5174'] 
+    : 'http://localhost:5174',
   credentials: true,
 }));
 app.use('/api/auth', authRoutes);
@@ -24,6 +26,8 @@ app.get('/users', async (req, res) => {
   res.json(users);
 });
 
-app.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
