@@ -10,7 +10,14 @@ import cors from "cors";
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: true, // Allow all origins for now
+  origin: [
+    'http://localhost:3001',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://academa-qxzhu4ot2-enkhmendeees-projects.vercel.app',
+    'https://academa-kei.vercel.app'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
