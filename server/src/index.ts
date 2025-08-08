@@ -14,12 +14,24 @@ app.use(cors({
     ? ['https://academa-9tytvwwd5-enkhmendeees-projects.vercel.app', 'http://localhost:5174'] 
     : 'http://localhost:5174',
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+// Add debugging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api', protectedRoutes);
 app.use('/api/homeworks', homeworkRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/exams', examRoutes);
+
+app.get('/test', (req, res) => {
+  res.json({ message: 'Server is working!' });
+});
 
 app.get('/users', async (req, res) => {
   const users = await prisma.user.findMany();
