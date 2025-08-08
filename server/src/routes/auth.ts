@@ -24,14 +24,26 @@ router.post(
     validateRequest,
   ],
   async (req: Request, res: Response) => {
+    console.log('Registration endpoint called');
+    console.log('Request body:', req.body);
+    
     const { email, password, username } = req.body;
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) return res.status(400).json({ error: 'Email already registered' });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Check if JWT_SECRET is set
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not set');
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
 
     try {
+      const existingUser = await prisma.user.findUnique({ where: { email } });
+      if (existingUser) {
+        console.log('Email already registered:', email);
+        return res.status(400).json({ error: 'Email already registered' });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
       const user = await prisma.user.create({
         data: {
           email,
@@ -39,11 +51,15 @@ router.post(
           username,
         },
       });
+      
+      console.log('User created successfully:', user.id);
+      
       const token = jwt.sign(
         { id: user.id, username: user.username, email: user.email },
-        process.env.JWT_SECRET!,
+        process.env.JWT_SECRET,
         { expiresIn: "7d" }
       );
+      
       res.status(201).json({
         token,
         user: {
@@ -55,7 +71,8 @@ router.post(
       });
     } catch (error) {
       console.error('Error creating user:', error);
-      res.status(400).json({ error: 'User registration failed' });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      res.status(400).json({ error: 'User registration failed', details: errorMessage });
     }
   }
 );

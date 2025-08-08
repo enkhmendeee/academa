@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create axios instance with interceptors
 const api = axios.create({
-  baseURL: "https://academa-gl5b.onrender.com",
+  baseURL: "https://academa-gl5b.onrender.com/api",
 });
 
 // Request interceptor to add token
