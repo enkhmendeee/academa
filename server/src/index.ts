@@ -16,9 +16,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 200
 }));
-// Handle OPTIONS preflight requests
-app.options('*', cors());
-
 // Add debugging middleware
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
