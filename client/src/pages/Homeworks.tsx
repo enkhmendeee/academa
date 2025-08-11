@@ -19,6 +19,10 @@ import { getHomeworks, createHomework, updateHomework } from "../services/homewo
 import { getCourses, createCourse } from "../services/course";
 import { getExams, createExam, updateExam } from "../services/exam";
 import { updateProfile } from "../services/auth";
+import { AssignmentForm } from "../components/AssignmentForm";
+import { FilterControls } from "../components/FilterControls";
+import { HomeworkTable } from "../components/HomeworkTable";
+import { getStatusColor, getStatusDisplayText, compareValues, getDefaultDateTime, vibrantColors } from "../utils/homeworkUtils";
 
 const { Sider, Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -35,7 +39,6 @@ export default function Homeworks() {
   const [loading, setLoading] = useState(false);
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
-  const [homeworkForm] = Form.useForm();
   const [addingHomework, setAddingHomework] = useState(false);
   const [courseForm] = Form.useForm();
   const [addingCourse, setAddingCourse] = useState(false);
@@ -73,14 +76,7 @@ export default function Homeworks() {
     }
   };
 
-  // Get current date with midnight time for default value
-  const getDefaultDateTime = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}T00:00`;
-  };
+
 
   // Add CSS animation for smooth slide-down effect
   React.useEffect(() => {
@@ -123,25 +119,7 @@ export default function Homeworks() {
     };
   }, [showColorPicker]);
   
-  // Vibrant color palette for courses
-  const vibrantColors = [
-    '#1976d2', // Blue
-    '#e91e63', // Pink
-    '#9c27b0', // Purple
-    '#ff5722', // Orange
-    '#4caf50', // Green
-    '#ff9800', // Amber
-    '#00bcd4', // Cyan
-    '#f44336', // Red
-    '#673ab7', // Deep Purple
-    '#3f51b5', // Indigo
-    '#009688', // Teal
-    '#ff4081', // Pink
-    '#795548', // Brown
-    '#607d8b', // Blue Grey
-    '#8bc34a', // Light Green
-    '#ffc107'  // Yellow
-  ];
+
 
   // Fetch data
   const fetchData = async () => {
@@ -202,7 +180,6 @@ export default function Homeworks() {
     try {
       await createHomework({ ...values, semester: selectedSemester });
       message.success("Homework added successfully!");
-      homeworkForm.resetFields();
       fetchData();
     } catch (error) {
       console.error("Failed to add homework:", error);
@@ -234,7 +211,6 @@ export default function Homeworks() {
     try {
       await createExam({ ...values, semester: selectedSemester });
       message.success("Exam added successfully!");
-      homeworkForm.resetFields();
       fetchData();
     } catch (error) {
       console.error("Failed to add exam:", error);
@@ -335,21 +311,7 @@ export default function Homeworks() {
     }
   };
 
-  // Get status color
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "COMPLETED":
-        return "#43a047";
-      case "IN_PROGRESS":
-        return "#ffa726";
-      case "OVERDUE":
-        return "#e53935";
-      case "PENDING":
-        return "#1976d2";
-      default:
-        return "#1976d2";
-    }
-  };
+
 
   // Get unique semesters from homeworks and courses
   const existingSemesters = Array.from(new Set([
@@ -405,18 +367,6 @@ export default function Homeworks() {
           bValue = new Date(b.dueDate);
       }
       
-      const compareValues = (a: any, b: any, order: "ascend" | "descend") => {
-        if (order === "ascend") {
-          if (a > b) return 1;
-          if (a < b) return -1;
-          return 0;
-        } else {
-          if (a < b) return 1;
-          if (a > b) return -1;
-          return 0;
-        }
-      };
-      
       return compareValues(aValue, bValue, sortOrder);
     });
 
@@ -464,301 +414,13 @@ export default function Homeworks() {
           bValue = new Date(b.examDate);
       }
       
-      const compareValues = (a: any, b: any, order: "ascend" | "descend") => {
-        if (order === "ascend") {
-          if (a > b) return 1;
-          if (a < b) return -1;
-          return 0;
-        } else {
-          if (a < b) return 1;
-          if (a > b) return -1;
-          return 0;
-        }
-      };
-      
       return compareValues(aValue, bValue, sortOrder);
     });
 
   // Filter courses by selected semester
   const currentSemesterCourses = courses.filter(course => course.semester === selectedSemester);
 
-  // Table columns
-  const columns = [
-    {
-      title: "Assignment",
-      dataIndex: "title",
-      key: "title",
-      render: (text: string, record: any) => {
-        const isEditing = editingHomework === record.id && editingField === 'title';
-        const isExam = record.type === 'exam' || record.examType;
-        return isEditing ? (
-          <Input
-            defaultValue={text}
-            onPressEnter={(e: any) => handleUpdateHomeworkField(record.id, 'title', e.target.value)}
-            onBlur={() => setEditingHomework(null)}
-            autoFocus
-            style={{ borderRadius: 8 }}
-          />
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Tag 
-              color={isExam ? 'purple' : 'blue'}
-              style={{ fontSize: '10px' }}
-            >
-              {isExam ? 'Exam' : 'HW'}
-            </Tag>
-            <Text 
-              strong 
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                setEditingHomework(record.id);
-                setEditingField('title');
-              }}
-            >
-              {text}
-            </Text>
-          </div>
-        );
-      },
-    },
-    {
-      title: "Course",
-      dataIndex: ["course", "name"],
-      key: "course",
-      render: (text: string, record: any) => {
-        const isEditing = editingHomework === record.id && editingField === 'courseId';
-        const course = courses.find(c => c.id === record.courseId);
-        const courseColor = course?.color || '#1976d2';
-        const bgColor = `${courseColor}15`; // 15% opacity
-        
-        return isEditing ? (
-          <Select
-            defaultValue={record.courseId}
-            onSelect={(value) => handleUpdateHomeworkField(record.id, 'courseId', value)}
-            onBlur={() => setEditingHomework(null)}
-            style={{ width: 150, borderRadius: 8 }}
-            autoFocus
-          >
-            {courses.map(c => (
-              <Select.Option key={c.id} value={c.id}>
-                {c.name}
-              </Select.Option>
-            ))}
-          </Select>
-        ) : (
-          <div
-            style={{ 
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              padding: '4px 12px',
-              borderRadius: '16px',
-              backgroundColor: bgColor,
-              border: `2px solid ${courseColor}`,
-              color: courseColor,
-              fontSize: '12px',
-              fontWeight: '500',
-              transition: 'all 0.2s ease',
-              maxWidth: '150px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}
-            onClick={() => {
-              setEditingHomework(record.id);
-              setEditingField('courseId');
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.05)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            {text}
-          </div>
-        );
-      },
-    },
-    {
-      title: "Due Date/Time",
-      dataIndex: "dueDate",
-      key: "dueDate",
-      render: (date: string, record: any) => {
-        const isEditing = editingHomework === record.id && editingField === 'dueDate';
-        return isEditing ? (
-          <Input
-            type="datetime-local"
-            defaultValue={date ? new Date(date).toISOString().slice(0, 16) : ''}
-            onPressEnter={(e: any) => handleUpdateHomeworkField(record.id, 'dueDate', e.target.value)}
-            onBlur={() => setEditingHomework(null)}
-            autoFocus
-            style={{ borderRadius: 8 }}
-          />
-        ) : (
-          <Text 
-            style={{ cursor: 'pointer' }}
-            onClick={() => {
-              setEditingHomework(record.id);
-              setEditingField('dueDate');
-            }}
-          >
-            {new Date(date).toLocaleString()}
-          </Text>
-        );
-      },
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status: string, record: any) => {
-        const getStatusDisplayText = (status: string) => {
-          switch (status) {
-            case "PENDING": return "Pending";
-            case "IN_PROGRESS": return "In Progress";
-            case "COMPLETED": return "Completed";
-            case "OVERDUE": return "Overdue";
-            default: return status;
-          }
-        };
-
-        return (
-          <Dropdown
-            menu={{
-              items: [
-                {
-                  key: "PENDING",
-                  label: (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ 
-                        width: 16, 
-                        height: 16, 
-                        borderRadius: '50%', 
-                        backgroundColor: getStatusColor("PENDING"),
-                        boxShadow: `0 2px 4px ${getStatusColor("PENDING")}40`,
-                        transition: 'all 0.2s ease'
-                      }} />
-                      <span style={{ fontSize: '14px', fontWeight: '500' }}>Pending</span>
-                    </div>
-                  ),
-                  onClick: () => {
-                    handleUpdateHomeworkField(record.id, 'status', 'PENDING');
-                  }
-                },
-                {
-                  key: "IN_PROGRESS",
-                  label: (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ 
-                        width: 16, 
-                        height: 16, 
-                        borderRadius: '50%', 
-                        backgroundColor: getStatusColor("IN_PROGRESS"),
-                        boxShadow: `0 2px 4px ${getStatusColor("IN_PROGRESS")}40`,
-                        transition: 'all 0.2s ease'
-                      }} />
-                      <span style={{ fontSize: '14px', fontWeight: '500' }}>In Progress</span>
-                    </div>
-                  ),
-                  onClick: () => {
-                    handleUpdateHomeworkField(record.id, 'status', 'IN_PROGRESS');
-                  }
-                },
-                {
-                  key: "COMPLETED",
-                  label: (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ 
-                        width: 16, 
-                        height: 16, 
-                        borderRadius: '50%', 
-                        backgroundColor: getStatusColor("COMPLETED"),
-                        boxShadow: `0 2px 4px ${getStatusColor("COMPLETED")}40`,
-                        transition: 'all 0.2s ease'
-                      }} />
-                      <span style={{ fontSize: '14px', fontWeight: '500' }}>Completed</span>
-                    </div>
-                  ),
-                  onClick: () => {
-                    handleUpdateHomeworkField(record.id, 'status', 'COMPLETED');
-                  }
-                },
-                {
-                  key: "OVERDUE",
-                  label: (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ 
-                        width: 16, 
-                        height: 16, 
-                        borderRadius: '50%', 
-                        backgroundColor: getStatusColor("OVERDUE"),
-                        boxShadow: `0 2px 4px ${getStatusColor("OVERDUE")}40`,
-                        transition: 'all 0.2s ease'
-                      }} />
-                      <span style={{ fontSize: '14px', fontWeight: '500' }}>Overdue</span>
-                    </div>
-                  ),
-                  onClick: () => {
-                    handleUpdateHomeworkField(record.id, 'status', 'OVERDUE');
-                  }
-                }
-              ]
-            }}
-            trigger={["click"]}
-          >
-            <div
-              style={{
-                cursor: 'pointer',
-                padding: '8px 16px',
-                borderRadius: '20px',
-                backgroundColor: getStatusColor(status),
-                color: 'white',
-                fontSize: '13px',
-                fontWeight: '600',
-                textAlign: 'center',
-                minWidth: '80px',
-                boxShadow: `0 2px 8px ${getStatusColor(status)}40`,
-                border: 'none',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                animation: status === 'COMPLETED' ? 'celebrate 0.6s ease-in-out' : 'none',
-                transform: status === 'COMPLETED' ? 'scale(1.05)' : 'scale(1)',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.05)';
-                e.currentTarget.style.boxShadow = `0 4px 16px ${getStatusColor(status)}60`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = status === 'COMPLETED' ? 'scale(1.05)' : 'scale(1)';
-                e.currentTarget.style.boxShadow = `0 2px 8px ${getStatusColor(status)}40`;
-              }}
-            >
-              {getStatusDisplayText(status)}
-            </div>
-          </Dropdown>
-        );
-      },
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_: any, record: any) => (
-        <Space>
-          <Button 
-            size="small" 
-            type="text" 
-            danger
-            icon={<DeleteOutlined />}
-            style={{ padding: 4 }}
-          />
-        </Space>
-      ),
-    },
-  ];
+  
 
   return (
     <>
@@ -912,12 +574,28 @@ export default function Homeworks() {
               </div>
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Text 
-                  style={{ fontSize: 18, fontWeight: 500, color: "#1976d2", cursor: "pointer" }}
+                <button
+                  type="button"
                   onClick={() => setEditingMotto(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setEditingMotto(true);
+                    }
+                  }}
+                  style={{ 
+                    fontSize: 18, 
+                    fontWeight: 500, 
+                    color: "#1976d2", 
+                    cursor: "pointer",
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    outline: 'none'
+                  }}
+                  aria-label="Edit motto"
                 >
                   {user?.motto || "My Motto"}
-                </Text>
+                </button>
                 <Button
                   type="text"
                   icon={<EditOutlined />}
@@ -1078,8 +756,14 @@ export default function Homeworks() {
                 />
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                   {!addingNewSemester && (
-                    <div
+                    <button
+                      type="button"
                       onClick={() => setAddingNewSemester(true)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          setAddingNewSemester(true);
+                        }
+                      }}
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -1093,7 +777,8 @@ export default function Homeworks() {
                         fontWeight: '500',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
-                        boxShadow: '0 2px 8px rgba(25, 118, 210, 0.15)'
+                        boxShadow: '0 2px 8px rgba(25, 118, 210, 0.15)',
+                        outline: 'none'
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = '#bbdefb';
@@ -1105,10 +790,11 @@ export default function Homeworks() {
                         e.currentTarget.style.transform = 'scale(1)';
                         e.currentTarget.style.boxShadow = '0 2px 8px rgba(25, 118, 210, 0.15)';
                       }}
+                      aria-label="Add new semester"
                     >
                       <PlusOutlined style={{ fontSize: '14px' }} />
                       Add New Semester
-                    </div>
+                    </button>
                   )}
                   {addingNewSemester && (
                     <div style={{ 
@@ -1191,8 +877,14 @@ export default function Homeworks() {
                       />
                       
                       <div style={{ position: 'relative' }} className="color-picker-container">
-                        <div
+                        <button
+                          type="button"
                           onClick={() => setShowColorPicker(!showColorPicker)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              setShowColorPicker(!showColorPicker);
+                            }
+                          }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.transform = 'scale(1.1)';
                             e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
@@ -1213,9 +905,10 @@ export default function Homeworks() {
                             alignItems: 'center',
                             justifyContent: 'center',
                             userSelect: 'none',
-                            outline: 'none'
+                            outline: 'none',
+                            cursor: 'pointer'
                           }}
-                          tabIndex={-1}
+                          aria-label="Open color picker"
                         >
                           <div style={{
                             width: 8,
@@ -1224,7 +917,7 @@ export default function Homeworks() {
                             backgroundColor: '#fff',
                             opacity: 0.8
                           }} />
-                        </div>
+                        </button>
                         
                         {showColorPicker && (
                           <div style={{
@@ -1247,11 +940,18 @@ export default function Homeworks() {
                               width: '200px'
                             }}>
                               {vibrantColors.map((color, index) => (
-                                <div
-                                  key={index}
+                                <button
+                                  key={color}
+                                  type="button"
                                   onClick={() => {
                                     setCourseColor(color);
                                     setShowColorPicker(false);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      setCourseColor(color);
+                                      setShowColorPicker(false);
+                                    }
                                   }}
                                   style={{
                                     width: '32px',
@@ -1261,8 +961,10 @@ export default function Homeworks() {
                                     border: courseColor === color ? '3px solid #333' : '2px solid #fff',
                                     cursor: 'pointer',
                                     boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                    transition: 'all 0.2s ease'
+                                    transition: 'all 0.2s ease',
+                                    outline: 'none'
                                   }}
+                                  aria-label={`Select color ${color}`}
                                   onMouseEnter={(e) => {
                                     e.currentTarget.style.transform = 'scale(1.1)';
                                     e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
@@ -1398,234 +1100,33 @@ export default function Homeworks() {
                 style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}
               >
                 <div style={{ border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'hidden' }}>
-                  {/* Assignment Adder Row - Always at top */}
-                  <div style={{ 
-                    padding: '16px', 
-                    background: '#fafafa', 
-                    borderBottom: '1px solid #f0f0f0',
-                    borderTop: '1px solid #f0f0f0'
-                  }}>
-                    <Form 
-                      form={homeworkForm} 
-                      layout="inline" 
-                      onFinish={formType === 'homework' ? handleAddHomework : handleAddExam}
-                      style={{ display: 'flex', gap: 8, alignItems: 'center' }}
-                    >
-                      <Form.Item 
-                        name="title" 
-                        rules={[{ required: true, message: 'Title required!' }]}
-                        style={{ marginBottom: 0, flex: 1 }}
-                      >
-                        <Input 
-                          placeholder={formType === 'homework' ? 'Homework Title' : 'Exam Title'} 
-                          style={{ borderRadius: 8 }} 
-                        />
-                      </Form.Item>
-                      <Form.Item 
-                        name="courseId" 
-                        rules={[{ required: true, message: 'Course required!' }]}
-                        style={{ marginBottom: 0, width: 150 }}
-                      >
-                        <Select placeholder="Select Course" style={{ borderRadius: 8 }}>
-                          {currentSemesterCourses.map(c => (
-                            <Select.Option key={c.id} value={c.id}>
-                              {c.name}
-                            </Select.Option>
-                          ))}
-                        </Select>
-                      </Form.Item>
-                      <Form.Item 
-                        name={formType === 'homework' ? 'dueDate' : 'examDate'} 
-                        rules={[{ required: true, message: formType === 'homework' ? 'Due date required!' : 'Exam date required!' }]}
-                        style={{ marginBottom: 0, width: 150 }}
-                        initialValue={getDefaultDateTime()}
-                      >
-                        <Input 
-                          type="datetime-local" 
-                          placeholder={formType === 'homework' ? 'Due Date' : 'Exam Date'}
-                          style={{ borderRadius: 8 }} 
-                        />
-                      </Form.Item>
-                      {formType === 'exam' && (
-                        <Form.Item 
-                          name="examType" 
-                          style={{ marginBottom: 0, width: 120 }}
-                        >
-                          <Select placeholder="Type" style={{ borderRadius: 8 }}>
-                            <Select.Option value="Midterm">Midterm</Select.Option>
-                            <Select.Option value="Final">Final</Select.Option>
-                            <Select.Option value="Quiz">Quiz</Select.Option>
-                            <Select.Option value="Assignment">Assignment</Select.Option>
-                          </Select>
-                        </Form.Item>
-                      )}
-                      <Form.Item 
-                        name="status" 
-                        initialValue="PENDING"
-                        style={{ marginBottom: 0, width: 120 }}
-                      >
-                        <Select style={{ borderRadius: 8 }}>
-                          <Select.Option value="PENDING">Pending</Select.Option>
-                          <Select.Option value="IN_PROGRESS">In Progress</Select.Option>
-                          <Select.Option value="COMPLETED">Completed</Select.Option>
-                          <Select.Option value="OVERDUE">Overdue</Select.Option>
-                        </Select>
-                      </Form.Item>
-                      <Form.Item style={{ marginBottom: 0 }}>
-                        <Button 
-                          type="primary" 
-                          htmlType="submit" 
-                          icon={<PlusOutlined />}
-                          loading={addingHomework}
-                          style={{ 
-                            borderRadius: 8, 
-                            background: formType === 'homework' ? '#1976d2' : '#9c27b0', 
-                            borderColor: formType === 'homework' ? '#1976d2' : '#9c27b0'
-                          }}
-                        >
-                          Add {formType === 'homework' ? 'Homework' : 'Exam'}
-                        </Button>
-                      </Form.Item>
-                    </Form>
-                  </div>
+                  <AssignmentForm
+                    formType={formType}
+                    setFormType={setFormType}
+                    currentSemesterCourses={currentSemesterCourses}
+                    addingHomework={addingHomework}
+                    onFinish={formType === 'homework' ? handleAddHomework : handleAddExam}
+                  />
                   
-                  {/* Filter Toggle Button */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    marginBottom: 8,
-                    padding: '8px'
-                  }}>
-                    <Button
-                      type="text"
-                      icon={<FilterOutlined />}
-                      onClick={() => setShowFilters(!showFilters)}
-                      style={{ 
-                        color: '#1976d2',
-                        fontSize: 12,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4
-                      }}
-                    >
-                      {showFilters ? 'Hide Filters' : 'Show Filters'}
-                      {showFilters ? <UpOutlined /> : <DownOutlined />}
-                    </Button>
-                    
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Text style={{ fontSize: 12, color: '#666' }}>Completed assignments:</Text>
-                      <Button
-                        type={hideCompleted ? 'primary' : 'default'}
-                        size="small"
-                        onClick={() => handleHideCompletedChange(!hideCompleted)}
-                        style={{ 
-                          fontSize: 11,
-                          height: 24,
-                          padding: '0 8px',
-                          borderRadius: 12,
-                          background: hideCompleted ? '#1976d2' : '#f0f0f0',
-                          borderColor: hideCompleted ? '#1976d2' : '#d9d9d9',
-                          color: hideCompleted ? 'white' : '#666'
-                        }}
-                      >
-                        {hideCompleted ? 'Hide' : 'Show'}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Filter and Sort Controls */}
-                  {showFilters && (
-                    <div style={{ 
-                      display: 'flex', 
-                      gap: 16, 
-                      alignItems: 'center', 
-                      marginBottom: 16,
-                      padding: '16px',
-                      background: '#f8f9fa',
-                      borderRadius: 8,
-                      border: '1px solid #e9ecef'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Text strong style={{ fontSize: 14 }}>Filter by:</Text>
-                        <Select
-                          placeholder="Status"
-                          style={{ width: 120 }}
-                          value={statusFilter}
-                          onChange={setStatusFilter}
-                        >
-                          <Option value="all">All Status</Option>
-                          <Option value="PENDING">Pending</Option>
-                          <Option value="IN_PROGRESS">In Progress</Option>
-                          <Option value="COMPLETED" disabled={hideCompleted}>Completed</Option>
-                          <Option value="OVERDUE">Overdue</Option>
-                        </Select>
-                      </div>
-                      
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Text strong style={{ fontSize: 14 }}>Course:</Text>
-                        <Select
-                          placeholder="Course"
-                          style={{ width: 150 }}
-                          value={courseFilter}
-                          onChange={setCourseFilter}
-                        >
-                          <Option value="all">All Courses</Option>
-                          {currentSemesterCourses.map(course => (
-                            <Option key={course.id} value={course.id.toString()}>
-                              {course.name}
-                            </Option>
-                          ))}
-                        </Select>
-                      </div>
-                      
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Text strong style={{ fontSize: 14 }}>Sort by:</Text>
-                        <Select
-                          style={{ width: 120 }}
-                          value={sortBy}
-                          onChange={setSortBy}
-                        >
-                          <Option value="dueDate">Due Date</Option>
-                          <Option value="title">Title</Option>
-                          <Option value="course">Course</Option>
-                          <Option value="status">Status</Option>
-                          <Option value="grade">Grade</Option>
-                        </Select>
-                      </div>
-                      
-                      <Button
-                        type="text"
-                        icon={sortOrder === "ascend" ? "↑" : "↓"}
-                        onClick={() => setSortOrder(sortOrder === "ascend" ? "descend" : "ascend")}
-                        style={{ 
-                          color: '#1976d2',
-                          fontWeight: 'bold',
-                          fontSize: 16
-                        }}
-                      >
-                        {sortOrder === "ascend" ? "Ascending" : "Descending"}
-                      </Button>
-                      
-                      <Button
-                        type="text"
-                        onClick={() => {
-                          setStatusFilter("all");
-                          setCourseFilter("all");
-                          setSortBy("dueDate");
-                          setSortOrder("ascend");
-                        }}
-                        style={{ color: '#666' }}
-                      >
-                        Clear Filters
-                      </Button>
-                    </div>
-                  )}
+                  <FilterControls
+                    showFilters={showFilters}
+                    setShowFilters={setShowFilters}
+                    statusFilter={statusFilter}
+                    setStatusFilter={setStatusFilter}
+                    courseFilter={courseFilter}
+                    setCourseFilter={setCourseFilter}
+                    sortBy={sortBy}
+                    setSortBy={setSortBy}
+                    sortOrder={sortOrder}
+                    setSortOrder={setSortOrder}
+                    hideCompleted={hideCompleted}
+                    handleHideCompletedChange={handleHideCompletedChange}
+                    currentSemesterCourses={currentSemesterCourses}
+                  />
                   
                   {/* Filtered Assignments Table */}
-                  <Table
-                    columns={columns}
-                    dataSource={
+                  <HomeworkTable
+                    homeworks={
                       formType === 'homework' 
                         ? filteredAndSortedHomeworks
                         : filteredAndSortedExams.map(exam => ({
@@ -1634,10 +1135,16 @@ export default function Homeworks() {
                             type: 'exam'
                           }))
                     }
+                    exams={exams}
+                    courses={courses}
                     loading={loading}
-                    rowKey="id"
-                    pagination={false}
-                    style={{ marginTop: 0 }}
+                    editingHomework={editingHomework}
+                    editingField={editingField}
+                    setEditingHomework={setEditingHomework}
+                    setEditingField={setEditingField}
+                    handleUpdateHomeworkField={handleUpdateHomeworkField}
+                    getStatusColor={getStatusColor}
+                    getStatusDisplayText={getStatusDisplayText}
                   />
                 </div>
               </Card>

@@ -13,9 +13,8 @@ import {
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { getCourses, updateCourse, deleteCourse } from "../services/course";
-import { getHomeworks } from "../services/homework";
-import { getExams } from "../services/exam";
+import { useData } from "../context/DataContext";
+import { updateCourse, deleteCourse } from "../services/course";
 import { updateProfile } from "../services/auth";
 
 const { Sider, Header, Content } = Layout;
@@ -23,7 +22,8 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 export default function Courses() {
-  const { token, user, login, logout, selectedSemester, setSelectedSemester, allSemesters, addSemester } = useAuth();
+  const { token, user, login, logout, selectedSemester, setSelectedSemester, allSemesters } = useAuth();
+  const { courses, homeworks, exams, loading, updateLocalCourse, removeLocalCourse } = useData();
   
   // Add CSS animation for smooth slide-down effect
   React.useEffect(() => {
@@ -49,9 +49,6 @@ export default function Courses() {
   }, []);
   const navigate = useNavigate();
   const location = useLocation();
-  const [courses, setCourses] = useState<any[]>([]);
-  const [homeworks, setHomeworks] = useState<any[]>([]);
-  const [exams, setExams] = useState<any[]>([]);
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
   const [editingCourse, setEditingCourse] = useState<number | null>(null);
@@ -68,27 +65,6 @@ export default function Courses() {
       }
     }
   }, [location.state, selectedSemester, setSelectedSemester]);
-
-  // Fetch data
-  const fetchData = async () => {
-    if (!token) return;
-    try {
-      const [coursesData, homeworksData, examsData] = await Promise.all([
-        getCourses(),
-        getHomeworks(),
-        getExams()
-      ]);
-      setCourses(coursesData);
-      setHomeworks(homeworksData);
-      setExams(examsData);
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [token]);
 
 
 
@@ -128,7 +104,7 @@ export default function Courses() {
     try {
       await updateCourse(courseId, { [field]: value });
       message.success("Course updated successfully!");
-      fetchData();
+      updateLocalCourse(courseId, { [field]: value });
       setEditingCourse(null);
       setEditingField(null);
     } catch (error) {
@@ -143,7 +119,7 @@ export default function Courses() {
     try {
       await deleteCourse(courseId);
       message.success("Course deleted successfully!");
-      fetchData();
+      removeLocalCourse(courseId);
     } catch (error) {
       console.error("Failed to delete course:", error);
       message.error("Failed to delete course");
@@ -160,13 +136,7 @@ export default function Courses() {
       message.success("Course color updated successfully!");
       
       // Update the course color locally without refetching all data
-      setCourses(prevCourses => 
-        prevCourses.map(course => 
-          course.id === courseId 
-            ? { ...course, color: color }
-            : course
-        )
-      );
+      updateLocalCourse(courseId, { color });
     } catch (error: any) {
       console.error("Failed to update course color:", error);
       if (error.response) {
@@ -231,6 +201,23 @@ export default function Courses() {
   const getHomeworksForCourse = (courseId: number) => {
     return homeworks.filter(hw => hw.courseId === courseId);
   };
+
+  if (loading) {
+    return (
+      <Layout style={{ minHeight: "100vh" }}>
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "center", 
+          alignItems: "center", 
+          height: "100vh",
+          fontSize: 18,
+          color: "#1976d2"
+        }}>
+          Loading...
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout style={{ minHeight: "100vh" }}>

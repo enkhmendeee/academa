@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Layout, Menu, Typography, Card, Row, Col, Button, Input, message, Select} from "antd";
 import DataVisualizations from "../components/DataVisualizations";
 import {
@@ -11,9 +11,7 @@ import {
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { getHomeworks } from "../services/homework";
-import { getCourses } from "../services/course";
-import { getExams } from "../services/exam";
+import { useData } from "../context/DataContext";
 import { updateProfile } from "../services/auth";
 
 const { Sider, Header, Content } = Layout;
@@ -22,10 +20,8 @@ const { Option } = Select;
 
 export default function Home() {
   const { token, user, login, logout, selectedSemester } = useAuth();
+  const { homeworks, courses, exams, loading } = useData();
   const navigate = useNavigate();
-  const [homeworks, setHomeworks] = useState<any[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
-  const [exams, setExams] = useState<any[]>([]);
 
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
@@ -43,28 +39,6 @@ export default function Home() {
   const filteredExams = selectedSemester === "all" 
     ? exams 
     : exams.filter(exam => (exam.semester || exam.course?.semester) === selectedSemester);
-
-
-  // Fetch data
-  const fetchData = async () => {
-    if (!token) return;
-    try {
-      const [homeworksData, coursesData, examsData] = await Promise.all([
-        getHomeworks(),
-        getCourses(),
-        getExams()
-      ]);
-      setHomeworks(homeworksData);
-      setCourses(coursesData);
-      setExams(examsData);
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [token]);
 
   // Update motto
   const handleSaveMotto = async () => {
@@ -121,6 +95,23 @@ export default function Home() {
   };
 
 
+
+  if (loading) {
+    return (
+      <Layout style={{ minHeight: "100vh" }}>
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "center", 
+          alignItems: "center", 
+          height: "100vh",
+          fontSize: 18,
+          color: "#1976d2"
+        }}>
+          Loading...
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
