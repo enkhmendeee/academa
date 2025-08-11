@@ -770,68 +770,74 @@ export default function Courses() {
                     <Col key={course.id} xs={24} sm={12} md={8} lg={6} style={{ order: index }}>
                       <Card
                         key={`card-${course.id}`}
-                        title={
+                                                title={
                           <div style={{ 
                             color: "#1976d2", 
                             fontWeight: 600, 
                             fontSize: 16,
-                            textAlign: "center",
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "space-between"
+                            justifyContent: "space-between",
+                            width: "100%"
                           }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-                                                            {/* Color Picker Button */}
-                              <Dropdown
-                                menu={{
-                                  items: vibrantColors.map((color, index) => ({
-                                    key: color,
-                                    label: (
-                                      <div style={{ 
-                                        display: 'flex', 
-                                        alignItems: 'center', 
-                                        gap: 8,
-                                        padding: '4px 0'
-                                      }}>
-                                        <div style={{
-                                          width: 20,
-                                          height: 20,
-                                          borderRadius: '50%',
-                                          backgroundColor: color,
-                                          border: (course.color || '#1976d2') === color ? '2px solid #333' : '1px solid #d9d9d9',
-                                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                        }} />
-                                        <span style={{ fontSize: '12px' }}>
-                                          {color.toUpperCase()}
-                                        </span>
-                                      </div>
-                                    ),
-                                    onClick: () => handleUpdateCourseColor(course.id, color)
-                                  }))
+                            {/* Color Picker Button */}
+                            <Dropdown
+                              menu={{
+                                items: vibrantColors.map((color, index) => ({
+                                  key: color,
+                                  label: (
+                                    <div style={{ 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      gap: 8,
+                                      padding: '4px 0'
+                                    }}>
+                                      <div style={{
+                                        width: 20,
+                                        height: 20,
+                                        borderRadius: '50%',
+                                        backgroundColor: color,
+                                        border: (course.color || '#1976d2') === color ? '2px solid #333' : '1px solid #d9d9d9',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                      }} />
+                                      <span style={{ fontSize: '12px' }}>
+                                        {color.toUpperCase()}
+                                      </span>
+                                    </div>
+                                  ),
+                                  onClick: () => handleUpdateCourseColor(course.id, color)
+                                }))
+                              }}
+                              trigger={['click']}
+                              placement="bottomLeft"
+                            >
+                              <Button
+                                type="text"
+                                icon={<BgColorsOutlined />}
+                                style={{ 
+                                  color: course.color || "#1976d2", 
+                                  padding: 4,
+                                  borderRadius: '50%',
+                                  width: 32,
+                                  height: 32,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  border: `2px solid ${course.color || "#1976d2"}`,
+                                  backgroundColor: `${(course.color || "#1976d2")}15`,
+                                  transition: 'all 0.2s ease',
+                                  flexShrink: 0
                                 }}
-                                trigger={['click']}
-                                placement="bottomLeft"
-                              >
-                                <Button
-                                  type="text"
-                                  icon={<BgColorsOutlined />}
-                                  style={{ 
-                                    color: course.color || "#1976d2", 
-                                    padding: 4,
-                                    borderRadius: '50%',
-                                    width: 32,
-                                    height: 32,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    border: `2px solid ${course.color || "#1976d2"}`,
-                                    backgroundColor: `${(course.color || "#1976d2")}15`,
-                                    transition: 'all 0.2s ease'
-                                  }}
-                                  size="small"
-                                />
-                              </Dropdown>
-                              
+                                size="small"
+                              />
+                            </Dropdown>
+                            
+                            {/* Course Name - Centered */}
+                            <div style={{ 
+                              flex: 1, 
+                              textAlign: "center",
+                              margin: "0 8px"
+                            }}>
                               {editingCourse === course.id && editingField === 'name' ? (
                                 <Input
                                   value={courseEditValues[course.id]?.name || course.name}
@@ -842,12 +848,20 @@ export default function Courses() {
                                   onPressEnter={(e: any) => handleUpdateCourse(course.id, 'name', e.target.value)}
                                   onBlur={() => setEditingCourse(null)}
                                   autoFocus
-                                  style={{ flex: 1 }}
+                                  style={{ textAlign: "center" }}
                                 />
                               ) : (
                                 <Button
                                   type="text"
-                                  style={{ flex: 1, textAlign: "left", padding: 0, height: "auto", color: "#1976d2", fontWeight: 600, fontSize: 16 }}
+                                  style={{ 
+                                    textAlign: "center", 
+                                    padding: 0, 
+                                    height: "auto", 
+                                    color: "#1976d2", 
+                                    fontWeight: 600, 
+                                    fontSize: 16,
+                                    width: "100%"
+                                  }}
                                   onClick={() => handleEditCourse(course.id, 'name')}
                                 >
                                   {course.name}
@@ -855,6 +869,7 @@ export default function Courses() {
                               )}
                             </div>
                             
+                            {/* Delete Button */}
                             <Popconfirm
                               title="Delete this course?"
                               onConfirm={() => handleDeleteCourse(course.id)}
@@ -864,7 +879,17 @@ export default function Courses() {
                               <Button
                                 type="text"
                                 icon={<DeleteOutlined />}
-                                style={{ color: "#ff4d4f", padding: 4 }}
+                                style={{ 
+                                  color: "#ff4d4f", 
+                                  padding: 4,
+                                  borderRadius: '50%',
+                                  width: 32,
+                                  height: 32,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexShrink: 0
+                                }}
                                 size="small"
                               />
                             </Popconfirm>

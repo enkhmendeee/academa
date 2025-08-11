@@ -89,6 +89,7 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
             title="Upcoming Deadlines"
             style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
           >
+
             {(() => {
               const processUpcomingDeadlines = () => {
                 // Get upcoming deadlines (next 30 days)
@@ -242,6 +243,141 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
                   color: '#999'
                 }}>
                   <Text type="secondary">No upcoming homeworks or exams in the next 30 days.</Text>
+                </div>
+              );
+            })()}
+
+            {/* Exam Countdown */}
+            {(() => {
+              const getNextPendingExam = () => {
+                const now = new Date();
+                return exams
+                  .filter(exam => exam.status === 'PENDING')
+                  .sort((a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime())
+                  .find(exam => new Date(exam.examDate) > now);
+              };
+
+              const calculateTimeRemaining = (examDate: string) => {
+                const now = new Date();
+                const exam = new Date(examDate);
+                const diff = exam.getTime() - now.getTime();
+                
+                if (diff <= 0) return null;
+                
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                
+                return { days, hours, minutes };
+              };
+
+              const nextExam = getNextPendingExam();
+              const timeRemaining = nextExam ? calculateTimeRemaining(nextExam.examDate) : null;
+              const course = nextExam ? courses.find(c => c.id === nextExam.courseId) : null;
+
+              return (
+                <div style={{ 
+                  marginTop: 20, 
+                  padding: '16px', 
+                  backgroundColor: '#f8f9fa', 
+                  borderRadius: 8,
+                  border: '1px solid #e9ecef'
+                }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    marginBottom: 12 
+                  }}>
+                    <div style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: '50%',
+                      backgroundColor: '#9c27b0',
+                      marginRight: 8
+                    }} />
+                    <Text strong style={{ fontSize: 16, color: '#9c27b0' }}>
+                      Next Exam Countdown
+                    </Text>
+                  </div>
+                  
+                  {nextExam && timeRemaining ? (
+                    <div>
+                      <div style={{ marginBottom: 8 }}>
+                        <Text strong style={{ fontSize: 14, color: '#333' }}>
+                          {nextExam.title}
+                        </Text>
+                        <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+                          {course?.name}
+                        </Text>
+                      </div>
+                      
+                      <div style={{ 
+                        display: 'flex', 
+                        gap: 12, 
+                        justifyContent: 'center',
+                        marginBottom: 8
+                      }}>
+                        <div style={{ 
+                          textAlign: 'center', 
+                          padding: '8px 12px',
+                          backgroundColor: '#9c27b0',
+                          color: 'white',
+                          borderRadius: 6,
+                          minWidth: '60px'
+                        }}>
+                          <div style={{ fontSize: 18, fontWeight: 'bold' }}>
+                            {timeRemaining.days}
+                          </div>
+                          <div style={{ fontSize: 10 }}>Days</div>
+                        </div>
+                        
+                        <div style={{ 
+                          textAlign: 'center', 
+                          padding: '8px 12px',
+                          backgroundColor: '#9c27b0',
+                          color: 'white',
+                          borderRadius: 6,
+                          minWidth: '60px'
+                        }}>
+                          <div style={{ fontSize: 18, fontWeight: 'bold' }}>
+                            {timeRemaining.hours}
+                          </div>
+                          <div style={{ fontSize: 10 }}>Hours</div>
+                        </div>
+                        
+                        <div style={{ 
+                          textAlign: 'center', 
+                          padding: '8px 12px',
+                          backgroundColor: '#9c27b0',
+                          color: 'white',
+                          borderRadius: 6,
+                          minWidth: '60px'
+                        }}>
+                          <div style={{ fontSize: 18, fontWeight: 'bold' }}>
+                            {timeRemaining.minutes}
+                          </div>
+                          <div style={{ fontSize: 10 }}>Minutes</div>
+                        </div>
+                      </div>
+                      
+                      <Text type="secondary" style={{ fontSize: 11, textAlign: 'center', display: 'block' }}>
+                        {new Date(nextExam.examDate).toLocaleString()}
+                      </Text>
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      textAlign: 'center', 
+                      padding: '20px 0',
+                      color: '#666'
+                    }}>
+                      <Text type="secondary" style={{ fontSize: 14 }}>
+                        No pending exams found
+                      </Text>
+                      <div style={{ fontSize: 12, marginTop: 4 }}>
+                        All exams are completed or no exams scheduled
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })()}
@@ -458,6 +594,10 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
               const renderCalendarDay = (day: Date) => {
                 const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
                 const dayHomeworks = getHomeworksForDate(day);
+                const dayExams = getExamsForDate(day);
+                const hasAssignments = dayHomeworks.length > 0 || dayExams.length > 0;
+                const hasExams = dayExams.length > 0;
+                const hasOnlyHomework = dayHomeworks.length > 0 && dayExams.length === 0;
                 const isSelected = selectedDate && day.toDateString() === selectedDate.toDateString();
                 const isToday = day.toDateString() === new Date().toDateString();
                 
@@ -466,6 +606,10 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
                   borderStyle = '2px solid #1976d2';
                 } else if (isToday) {
                   borderStyle = '2px solid #43a047';
+                } else if (hasExams) {
+                  borderStyle = '2px solid #9c27b0';
+                } else if (hasOnlyHomework) {
+                  borderStyle = '2px solid #ffa726';
                 }
                 
                 let backgroundColor = 'white';
@@ -473,6 +617,10 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
                   backgroundColor = '#f0f8ff';
                 } else if (isToday) {
                   backgroundColor = '#e8f5e8';
+                } else if (hasExams) {
+                  backgroundColor = '#f3e5f5';
+                } else if (hasOnlyHomework) {
+                  backgroundColor = '#fff3e0';
                 }
                 
                 return (
@@ -520,10 +668,28 @@ const DataVisualizations: React.FC<DataVisualizationsProps> = ({ homeworks, cour
                           {day.getDate()}
                         </Text>
                       );
-                    })()}
+                                        })()}
                     
-                    {/* Homework and Exam indicators */}
-                    {renderDayIndicators(day, dayHomeworks)}
+                    {/* Assignment count indicator */}
+                    {hasAssignments && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '2px',
+                        right: '2px',
+                        backgroundColor: hasExams ? '#9c27b0' : '#ffa726',
+                        color: 'white',
+                        borderRadius: '50%',
+                        width: '16px',
+                        height: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '10px',
+                        fontWeight: 'bold'
+                      }}>
+                        {dayHomeworks.length + dayExams.length}
+                      </div>
+                    )}
                   </button>
                 );
               };

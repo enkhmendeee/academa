@@ -632,14 +632,16 @@ export default function Homeworks() {
                 {
                   key: "PENDING",
                   label: (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ 
-                        width: 12, 
-                        height: 12, 
+                        width: 16, 
+                        height: 16, 
                         borderRadius: '50%', 
-                        backgroundColor: getStatusColor("PENDING") 
+                        backgroundColor: getStatusColor("PENDING"),
+                        boxShadow: `0 2px 4px ${getStatusColor("PENDING")}40`,
+                        transition: 'all 0.2s ease'
                       }} />
-                      Pending
+                      <span style={{ fontSize: '14px', fontWeight: '500' }}>Pending</span>
                     </div>
                   ),
                   onClick: () => {
@@ -649,14 +651,16 @@ export default function Homeworks() {
                 {
                   key: "IN_PROGRESS",
                   label: (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ 
-                        width: 12, 
-                        height: 12, 
+                        width: 16, 
+                        height: 16, 
                         borderRadius: '50%', 
-                        backgroundColor: getStatusColor("IN_PROGRESS") 
+                        backgroundColor: getStatusColor("IN_PROGRESS"),
+                        boxShadow: `0 2px 4px ${getStatusColor("IN_PROGRESS")}40`,
+                        transition: 'all 0.2s ease'
                       }} />
-                      In Progress
+                      <span style={{ fontSize: '14px', fontWeight: '500' }}>In Progress</span>
                     </div>
                   ),
                   onClick: () => {
@@ -666,14 +670,16 @@ export default function Homeworks() {
                 {
                   key: "COMPLETED",
                   label: (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ 
-                        width: 12, 
-                        height: 12, 
+                        width: 16, 
+                        height: 16, 
                         borderRadius: '50%', 
-                        backgroundColor: getStatusColor("COMPLETED") 
+                        backgroundColor: getStatusColor("COMPLETED"),
+                        boxShadow: `0 2px 4px ${getStatusColor("COMPLETED")}40`,
+                        transition: 'all 0.2s ease'
                       }} />
-                      Completed
+                      <span style={{ fontSize: '14px', fontWeight: '500' }}>Completed</span>
                     </div>
                   ),
                   onClick: () => {
@@ -683,14 +689,16 @@ export default function Homeworks() {
                 {
                   key: "OVERDUE",
                   label: (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ 
-                        width: 12, 
-                        height: 12, 
+                        width: 16, 
+                        height: 16, 
                         borderRadius: '50%', 
-                        backgroundColor: getStatusColor("OVERDUE") 
+                        backgroundColor: getStatusColor("OVERDUE"),
+                        boxShadow: `0 2px 4px ${getStatusColor("OVERDUE")}40`,
+                        transition: 'all 0.2s ease'
                       }} />
-                      Overdue
+                      <span style={{ fontSize: '14px', fontWeight: '500' }}>Overdue</span>
                     </div>
                   ),
                   onClick: () => {
@@ -701,17 +709,36 @@ export default function Homeworks() {
             }}
             trigger={["click"]}
           >
-            <Tag 
-              color={getStatusColor(status)}
-              style={{ 
+            <div
+              style={{
                 cursor: 'pointer',
+                padding: '8px 16px',
+                borderRadius: '20px',
+                backgroundColor: getStatusColor(status),
+                color: 'white',
+                fontSize: '13px',
+                fontWeight: '600',
+                textAlign: 'center',
+                minWidth: '80px',
+                boxShadow: `0 2px 8px ${getStatusColor(status)}40`,
+                border: 'none',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 animation: status === 'COMPLETED' ? 'celebrate 0.6s ease-in-out' : 'none',
-                transform: status === 'COMPLETED' ? 'scale(1.1)' : 'scale(1)',
-                transition: 'all 0.3s ease'
+                transform: status === 'COMPLETED' ? 'scale(1.05)' : 'scale(1)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)';
+                e.currentTarget.style.boxShadow = `0 4px 16px ${getStatusColor(status)}60`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = status === 'COMPLETED' ? 'scale(1.05)' : 'scale(1)';
+                e.currentTarget.style.boxShadow = `0 2px 8px ${getStatusColor(status)}40`;
               }}
             >
               {getStatusDisplayText(status)}
-            </Tag>
+            </div>
           </Dropdown>
         );
       },
@@ -1595,14 +1622,18 @@ export default function Homeworks() {
                     </div>
                   )}
                   
-                  {/* Combined Assignments Table */}
+                  {/* Filtered Assignments Table */}
                   <Table
                     columns={columns}
-                    dataSource={[...filteredAndSortedHomeworks, ...filteredAndSortedExams.map(exam => ({
-                      ...exam,
-                      dueDate: exam.examDate, // Map exam date to due date for consistency
-                      type: 'exam'
-                    }))]}
+                    dataSource={
+                      formType === 'homework' 
+                        ? filteredAndSortedHomeworks
+                        : filteredAndSortedExams.map(exam => ({
+                            ...exam,
+                            dueDate: exam.examDate, // Map exam date to due date for consistency
+                            type: 'exam'
+                          }))
+                    }
                     loading={loading}
                     rowKey="id"
                     pagination={false}
