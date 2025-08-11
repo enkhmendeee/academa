@@ -15,6 +15,7 @@ import {
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useData } from "../context/DataContext";
 import { getHomeworks, createHomework, updateHomework } from "../services/homework";
 import { getCourses, createCourse } from "../services/course";
 import { getExams, createExam, updateExam } from "../services/exam";
@@ -32,11 +33,8 @@ const { Option } = Select;
 
 export default function Homeworks() {
   const { token, user, login, logout, selectedSemester, setSelectedSemester, allSemesters, addSemester } = useAuth();
+  const { homeworks, exams, courses, loading, updateLocalHomework, updateLocalExam, addLocalHomework, addLocalExam, addLocalCourse, refreshData } = useData();
   const navigate = useNavigate();
-  const [homeworks, setHomeworks] = useState<any[]>([]);
-  const [exams, setExams] = useState<any[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
   const [addingHomework, setAddingHomework] = useState(false);
@@ -121,27 +119,8 @@ export default function Homeworks() {
   
 
 
-  // Fetch data
-  const fetchData = async () => {
-    if (!token) return;
-    setLoading(true);
-    try {
-      const [homeworksData, examsData, coursesData] = await Promise.all([
-        getHomeworks(),
-        getExams(),
-        getCourses()
-      ]);
-      setHomeworks(homeworksData);
-      setExams(examsData);
-      setCourses(coursesData);
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
-    fetchData();
+    // Data is now managed by DataContext, no need for local fetch
   }, [token]);
 
   // Check for overdue assignments on component mount and every minute
@@ -178,9 +157,9 @@ export default function Homeworks() {
     if (!token) return;
     setAddingHomework(true);
     try {
-      await createHomework({ ...values, semester: selectedSemester });
+      const newHomework = await createHomework({ ...values, semester: selectedSemester });
+      addLocalHomework(newHomework);
       message.success("Homework added successfully!");
-      fetchData();
     } catch (error) {
       console.error("Failed to add homework:", error);
       message.error("Failed to add homework");
@@ -193,10 +172,10 @@ export default function Homeworks() {
     if (!token) return;
     setAddingCourse(true);
     try {
-      await createCourse(values.name, selectedSemester, values.color);
+      const newCourse = await createCourse(values.name, selectedSemester, values.color);
+      addLocalCourse(newCourse);
       message.success("Course added successfully!");
       courseForm.resetFields();
-      fetchData();
     } catch (error) {
       console.error("Failed to add course:", error);
       message.error("Failed to add course");
@@ -209,9 +188,9 @@ export default function Homeworks() {
     if (!token) return;
     setAddingHomework(true);
     try {
-      await createExam({ ...values, semester: selectedSemester });
+      const newExam = await createExam({ ...values, semester: selectedSemester });
+      addLocalExam(newExam);
       message.success("Exam added successfully!");
-      fetchData();
     } catch (error) {
       console.error("Failed to add exam:", error);
       message.error("Failed to add exam");
@@ -266,7 +245,7 @@ export default function Homeworks() {
 
     // Refresh data if any assignments were updated
     if (overdueHomeworks.length > 0 || overdueExams.length > 0) {
-      fetchData();
+      refreshData();
     }
   };
 
@@ -274,18 +253,16 @@ export default function Homeworks() {
   const handleUpdateHomeworkField = async (homeworkId: number, field: string, value: any) => {
     if (!token) return;
     try {
-      await updateHomework(homeworkId, { [field]: value });
+      const updatedHomework = await updateHomework(homeworkId, { [field]: value });
+      
+      // Update local state immediately
+      updateLocalHomework(homeworkId, { [field]: value });
       
       // Show congratulatory message and animation for completed homework
       if (field === 'status' && value === 'COMPLETED') {
         message.success("🎉 Congratulations! Homework completed! 🎉");
-        // Add a small delay to let the user see the celebration
-        setTimeout(() => {
-          fetchData();
-        }, 500);
       } else {
         message.success("Homework updated successfully!");
-        fetchData();
       }
       
       setEditingHomework(null);
@@ -323,11 +300,14 @@ export default function Homeworks() {
   // Combine existing semesters with user-defined ones
   const semesters = Array.from(new Set([...existingSemesters, ...allSemesters]));
 
+  // Check if user has any semesters
+  const hasSemesters = semesters.length > 0;
+
   // Filter and sort homeworks
   const filteredAndSortedHomeworks = homeworks
     .filter(hw => {
       // Semester filter
-      const semesterMatch = selectedSemester === "all" || (hw.semester || hw.course?.semester) === selectedSemester;
+      const semesterMatch = (hw.semester || hw.course?.semester) === selectedSemester;
       
       // Status filter
       const statusMatch = statusFilter === "all" || hw.status === statusFilter;
@@ -374,7 +354,7 @@ export default function Homeworks() {
   const filteredAndSortedExams = exams
     .filter(exam => {
       // Semester filter
-      const semesterMatch = selectedSemester === "all" || (exam.semester || exam.course?.semester) === selectedSemester;
+      const semesterMatch = (exam.semester || exam.course?.semester) === selectedSemester;
       
       // Status filter
       const statusMatch = statusFilter === "all" || exam.status === statusFilter;
@@ -459,6 +439,8 @@ export default function Homeworks() {
           textAlign: "center",
           marginBottom: 32,
           letterSpacing: 1,
+          userSelect: 'none',
+          cursor: 'default'
         }}>
           Academa
         </div>
@@ -733,8 +715,76 @@ export default function Homeworks() {
         {/* Content */}
         <Content style={{ padding: 32, background: "linear-gradient(180deg, #ffffff 0%, #bbdefb 100%)", minHeight: 0 }}>
           <Row gutter={[32, 32]} justify="center">
+            {/* Semester Creation Prompt */}
+            {!hasSemesters && (
+              <Col span={24}>
+                <Card
+                  style={{ 
+                    borderRadius: 12, 
+                    border: "none", 
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
+                    textAlign: 'center',
+                    background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)'
+                  }}
+                >
+                  <div style={{ padding: '40px 20px' }}>
+                    <Title level={2} style={{ color: "#1976d2", marginBottom: 16 }}>
+                      Welcome to Academa! 🎓
+                    </Title>
+                    <Text style={{ fontSize: 16, color: '#666', marginBottom: 32, display: 'block' }}>
+                      To get started, you need to create your first semester. This will help you organize your courses and assignments.
+                    </Text>
+                    
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: 16, 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      flexWrap: 'wrap'
+                    }}>
+                      <Input
+                        placeholder="Enter semester name (e.g., Fall 2024, Spring 2025)"
+                        value={newSemesterValue}
+                        onChange={(e) => setNewSemesterValue(e.target.value)}
+                        onPressEnter={handleAddNewSemester}
+                        style={{ 
+                          width: 300, 
+                          borderRadius: 8,
+                          fontSize: 16
+                        }}
+                        size="large"
+                        autoFocus
+                      />
+                      <Button
+                        type="primary"
+                        onClick={handleAddNewSemester}
+                        disabled={!newSemesterValue.trim()}
+                        style={{ 
+                          borderRadius: 8,
+                          background: '#1976d2',
+                          borderColor: '#1976d2',
+                          fontSize: 16,
+                          height: 40
+                        }}
+                        size="large"
+                      >
+                        Create Semester
+                      </Button>
+                    </div>
+                    
+                    <div style={{ marginTop: 24 }}>
+                      <Text type="secondary" style={{ fontSize: 14 }}>
+                        💡 Tip: Use descriptive names like "Fall 2024" or "Spring 2025" to easily identify your semesters.
+                      </Text>
+                    </div>
+                  </div>
+                </Card>
+              </Col>
+            )}
+
             {/* My Homeworks Section with Semester Selector */}
-            <Col span={24}>
+            {hasSemesters && (
+              <Col span={24}>
               <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
                 <Title level={3} style={{ color: "#1976d2", margin: 0 }}>My Homeworks</Title>
                 <Select
@@ -742,10 +792,7 @@ export default function Homeworks() {
                   style={{ width: 200 }}
                   value={selectedSemester}
                   onChange={setSelectedSemester}
-                  options={[
-                    { value: "all", label: "All Semesters" },
-                    ...semesters.map(semester => ({ value: semester, label: semester }))
-                  ]}
+                  options={semesters.map(semester => ({ value: semester, label: semester }))}
 
                   onOpenChange={(open) => {
                     if (!open) {
@@ -845,13 +892,15 @@ export default function Homeworks() {
                 </div>
               </Row>
             </Col>
+            )}
 
             {/* Course Creation Section */}
-            <Col span={24}>
-              <Card
-                title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Add a New Course</span>}
-                style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)", marginBottom: 24 }}
-              >
+            {hasSemesters && (
+              <Col span={24}>
+                <Card
+                  title={<span style={{ color: "#1976d2", fontWeight: 500 }}>Add a New Course</span>}
+                  style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)", marginBottom: 24 }}
+                >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                     <div style={{ display: 'flex', gap: 16, alignItems: 'center', width: '100%' }}>
@@ -1058,9 +1107,11 @@ export default function Homeworks() {
                 </div>
               </Card>
             </Col>
+            )}
 
             {/* Assignment Table */}
-            <Col span={24}>
+            {hasSemesters && (
+              <Col span={24}>
               <Card
                 title={
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -1149,7 +1200,7 @@ export default function Homeworks() {
                 </div>
               </Card>
             </Col>
-
+            )}
 
           </Row>
         </Content>

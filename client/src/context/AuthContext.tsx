@@ -28,11 +28,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return savedUser ? JSON.parse(savedUser) : null;
   });
   const [selectedSemester, setSelectedSemester] = useState<string>(() => {
-    return localStorage.getItem('selectedSemester') || 'Spring 2025';
+    return localStorage.getItem('selectedSemester') || '';
   });
   const [allSemesters, setAllSemesters] = useState<string[]>(() => {
     const savedSemesters = localStorage.getItem('allSemesters');
-    return savedSemesters ? JSON.parse(savedSemesters) : ['Spring 2025', 'Fall 2024', 'Summer 2024'];
+    return savedSemesters ? JSON.parse(savedSemesters) : [];
   });
 
   const login = (newToken: string, newUser: User) => {

@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import Courses from "./pages/Courses";
 import Homeworks from "./pages/Homeworks";
 import PrivateRoute from "./components/PrivateRoute";
+import Footer from "./components/Footer";
 import { AuthProvider } from "./context/AuthContext";
 import { DataProvider } from "./context/DataContext";
 import 'antd/dist/reset.css';
@@ -44,6 +45,7 @@ function App() {
             } 
           />
         </Routes>
+        <Footer />
         <Analytics />
       </DataProvider>
     </AuthProvider>

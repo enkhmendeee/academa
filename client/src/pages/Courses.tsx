@@ -193,9 +193,7 @@ export default function Courses() {
   const semesters = Array.from(new Set([...existingSemesters, ...allSemesters]));
 
   // Filter courses by selected semester
-  const filteredCourses = selectedSemester === "all" 
-    ? courses 
-    : courses.filter(course => course.semester === selectedSemester);
+    const filteredCourses = courses.filter(course => course.semester === selectedSemester);
 
   // Get homeworks for a specific course
   const getHomeworksForCourse = (courseId: number) => {
@@ -244,6 +242,8 @@ export default function Courses() {
           textAlign: "center",
           marginBottom: 32,
           letterSpacing: 1,
+          userSelect: 'none',
+          cursor: 'default'
         }}>
           Academa
         </div>
@@ -511,10 +511,7 @@ export default function Courses() {
                   style={{ width: 200 }}
                   value={selectedSemester}
                   onChange={setSelectedSemester}
-                  options={[
-                    { value: "all", label: "All Semesters" },
-                    ...semesters.map(semester => ({ value: semester, label: semester }))
-                  ]}
+                  options={semesters.map(semester => ({ value: semester, label: semester }))}
 
 
                 />
@@ -533,13 +530,8 @@ export default function Courses() {
               >
                 {(() => {
                   // Filter courses and homeworks by selected semester
-                  const currentSemesterCourses = selectedSemester === "all" 
-                    ? courses 
-                    : courses.filter(course => course.semester === selectedSemester);
-                  
-                  const currentSemesterHomeworks = selectedSemester === "all"
-                    ? homeworks
-                    : homeworks.filter(hw => (hw.semester || hw.course?.semester) === selectedSemester);
+                  const currentSemesterCourses = courses.filter(course => course.semester === selectedSemester);
+                  const currentSemesterHomeworks = homeworks.filter(hw => (hw.semester || hw.course?.semester) === selectedSemester);
 
                   // Calculate course-wise homework distribution for current semester
                   const courseDistribution = currentSemesterCourses.map(course => {
@@ -598,7 +590,7 @@ export default function Courses() {
                       />
                       <div style={{ marginTop: 16 }}>
                         <Text type="secondary">
-                          {selectedSemester === "all" ? "All Semesters" : selectedSemester}: {currentSemesterHomeworks.length} homeworks | 
+                          {selectedSemester}: {currentSemesterHomeworks.length} homeworks | 
                           {courseDistribution.length} courses
                         </Text>
                       </div>
@@ -626,13 +618,8 @@ export default function Courses() {
                   >
                     {(() => {
                       // Filter courses and homeworks by selected semester
-                      const currentSemesterCourses = selectedSemester === "all" 
-                        ? courses 
-                        : courses.filter(course => course.semester === selectedSemester);
-                      
-                      const currentSemesterHomeworks = selectedSemester === "all"
-                        ? homeworks
-                        : homeworks.filter(hw => (hw.semester || hw.course?.semester) === selectedSemester);
+                                      const currentSemesterCourses = courses.filter(course => course.semester === selectedSemester);
+                const currentSemesterHomeworks = homeworks.filter(hw => (hw.semester || hw.course?.semester) === selectedSemester);
 
                       // Course-wise homework distribution for current semester
                       const courseData = currentSemesterCourses.map(course => {
@@ -726,8 +713,8 @@ export default function Courses() {
                             height={300}
                           />
                           <div style={{ marginTop: 16 }}>
-                            <Text type="secondary">
-                              {selectedSemester === "all" ? "All Semesters" : selectedSemester}: {courseData.length} courses | 
+                                                    <Text type="secondary">
+                          {selectedSemester}: {courseData.length} courses | 
                               {courseData.reduce((sum, course) => sum + course.total, 0)} homeworks
                             </Text>
                           </div>

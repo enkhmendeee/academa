@@ -43,7 +43,7 @@ export default function Login() {
       >
         <div style={{ padding: '40px' }}>
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <Title level={2} style={{ color: '#1976d2', marginBottom: '8px' }}>
+            <Title level={2} style={{ color: '#1976d2', marginBottom: '8px', userSelect: 'none', cursor: 'default' }}>
               Academa
             </Title>
             <Text type="secondary">Sign in to your account</Text>

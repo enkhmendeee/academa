@@ -28,17 +28,9 @@ export default function Home() {
   const [profileVisible, setProfileVisible] = useState(false);
 
   // Filter data by selected semester
-  const filteredHomeworks = selectedSemester === "all" 
-    ? homeworks 
-    : homeworks.filter(hw => (hw.semester || hw.course?.semester) === selectedSemester);
-
-  const filteredCourses = selectedSemester === "all" 
-    ? courses 
-    : courses.filter(course => course.semester === selectedSemester);
-
-  const filteredExams = selectedSemester === "all" 
-    ? exams 
-    : exams.filter(exam => (exam.semester || exam.course?.semester) === selectedSemester);
+  const filteredHomeworks = homeworks.filter(hw => (hw.semester || hw.course?.semester) === selectedSemester);
+  const filteredCourses = courses.filter(course => course.semester === selectedSemester);
+  const filteredExams = exams.filter(exam => (exam.semester || exam.course?.semester) === selectedSemester);
 
   // Update motto
   const handleSaveMotto = async () => {
@@ -138,6 +130,8 @@ export default function Home() {
           textAlign: "center",
           marginBottom: 32,
           letterSpacing: 1,
+          userSelect: 'none',
+          cursor: 'default'
         }}>
           Academa
         </div>

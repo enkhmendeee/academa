@@ -31,6 +31,11 @@ export const HomeworkTable: React.FC<HomeworkTableProps> = ({
   getStatusColor,
   getStatusDisplayText,
 }) => {
+  const [editValues, setEditValues] = React.useState<Record<number, string>>({});
+
+  const setEditValue = (recordId: number, value: string) => {
+    setEditValues(prev => ({ ...prev, [recordId]: value }));
+  };
   const columns = [
     {
       title: "Assignment",
@@ -150,16 +155,59 @@ export const HomeworkTable: React.FC<HomeworkTableProps> = ({
       dataIndex: "dueDate",
       key: "dueDate",
       render: (date: string, record: any) => {
-        const isEditing = editingHomework === record.id && editingField === 'dueDate';
+        const isExam = record.type === 'exam' || record.examType;
+        const fieldName = isExam ? 'examDate' : 'dueDate';
+        const isEditing = editingHomework === record.id && editingField === fieldName;
+        const editValue = editValues[record.id] ?? (date ? new Date(date).toISOString().slice(0, 16) : '');
+        
         return isEditing ? (
-          <Input
-            type="datetime-local"
-            defaultValue={date ? new Date(date).toISOString().slice(0, 16) : ''}
-            onPressEnter={(e: any) => handleUpdateHomeworkField(record.id, 'dueDate', e.target.value)}
-            onBlur={() => setEditingHomework(null)}
-            autoFocus
-            style={{ borderRadius: 8 }}
-          />
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <Input
+              type="datetime-local"
+              value={editValue}
+              onChange={(e) => setEditValue(record.id, e.target.value)}
+              onPressEnter={() => {
+                if (editValue) {
+                  handleUpdateHomeworkField(record.id, fieldName, editValue);
+                }
+              }}
+              autoFocus
+              style={{ borderRadius: 8 }}
+            />
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => {
+                if (editValue) {
+                  handleUpdateHomeworkField(record.id, fieldName, editValue);
+                }
+              }}
+              disabled={!editValue}
+              style={{ 
+                borderRadius: 8,
+                background: '#1976d2',
+                borderColor: '#1976d2',
+                fontSize: 12,
+                height: 32
+              }}
+            >
+              Save
+            </Button>
+            <Button
+              size="small"
+              onClick={() => {
+                setEditingHomework(null);
+                setEditValue(record.id, date ? new Date(date).toISOString().slice(0, 16) : '');
+              }}
+              style={{ 
+                borderRadius: 8,
+                fontSize: 12,
+                height: 32
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
         ) : (
           <button
             type="button"
@@ -175,9 +223,9 @@ export const HomeworkTable: React.FC<HomeworkTableProps> = ({
             }}
             onClick={() => {
               setEditingHomework(record.id);
-              setEditingField('dueDate');
+              setEditingField(fieldName);
             }}
-            aria-label={`Edit due date for ${new Date(date).toLocaleString()}`}
+            aria-label={`Edit ${isExam ? 'exam date' : 'due date'} for ${new Date(date).toLocaleString()}`}
           >
             {new Date(date).toLocaleString()}
           </button>
