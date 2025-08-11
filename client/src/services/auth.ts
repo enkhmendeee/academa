@@ -2,10 +2,14 @@ import axios from "axios";
 
 // Create axios instance with interceptors
 const api = axios.create({
-  baseURL: process.env.NODE_ENV === 'production' 
-    ? "https://academa-gl5b.onrender.com/api"
-    : "http://localhost:3000/api",
+  baseURL: window.location.hostname === 'localhost' 
+    ? "http://localhost:3000/api"
+    : "https://academa-gl5b.onrender.com/api",
 });
+
+// Log the API base URL for debugging
+console.log('API Base URL:', api.defaults.baseURL);
+console.log('Current hostname:', window.location.hostname);
 
 // Request interceptor to add token
 api.interceptors.request.use((config) => {
