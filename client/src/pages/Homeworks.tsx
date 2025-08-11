@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Menu, Typography, Card, Row, Col, Button, Table, Select, Input, message, Tag, Space, Form, Dropdown } from "antd";
+import { Layout, Menu, Typography, Card, Row, Col, Button, Select, Input, message, Tag, Form, Modal } from "antd";
 import {
   HomeOutlined,
   BookOutlined,
@@ -8,22 +8,19 @@ import {
   EditOutlined,
   CheckOutlined,
   LogoutOutlined,
-  FilterOutlined,
-  UpOutlined,
-  DownOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useData } from "../context/DataContext";
-import { getHomeworks, createHomework, updateHomework } from "../services/homework";
-import { getCourses, createCourse } from "../services/course";
-import { getExams, createExam, updateExam } from "../services/exam";
+import { createHomework, updateHomework } from "../services/homework";
+import { createCourse } from "../services/course";
+import { createExam, updateExam } from "../services/exam";
 import { updateProfile } from "../services/auth";
 import { AssignmentForm } from "../components/AssignmentForm";
 import { FilterControls } from "../components/FilterControls";
 import { HomeworkTable } from "../components/HomeworkTable";
-import { getStatusColor, getStatusDisplayText, compareValues, getDefaultDateTime, vibrantColors } from "../utils/homeworkUtils";
+import { getStatusColor, getStatusDisplayText, compareValues, vibrantColors } from "../utils/homeworkUtils";
 
 const { Sider, Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -33,7 +30,7 @@ const { Option } = Select;
 
 export default function Homeworks() {
   const { token, user, login, logout, selectedSemester, setSelectedSemester, allSemesters, addSemester, removeSemester, updateSemester, setLatestSemester } = useAuth();
-  const { homeworks, exams, courses, loading, updateLocalHomework, updateLocalExam, addLocalHomework, addLocalExam, addLocalCourse, refreshData } = useData();
+  const { homeworks, exams, courses, loading, updateLocalHomework, addLocalHomework, addLocalExam, addLocalCourse, refreshData } = useData();
   const navigate = useNavigate();
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
@@ -221,14 +218,19 @@ export default function Homeworks() {
   };
 
   // Handle adding new semester
-  const handleAddNewSemester = () => {
+  const handleAddNewSemester = async () => {
     if (newSemesterValue.trim()) {
       const newSemester = newSemesterValue.trim();
-      addSemester(newSemester);
-      setSelectedSemester(newSemester);
-      setAddingNewSemester(false);
-      setNewSemesterValue("");
-      message.success("New semester added!");
+      try {
+        await addSemester(newSemester);
+        setSelectedSemester(newSemester);
+        setAddingNewSemester(false);
+        setNewSemesterValue("");
+        message.success("New semester added!");
+      } catch (error) {
+        console.error('Failed to add semester:', error);
+        message.error("Failed to add semester");
+      }
     }
   };
 
@@ -239,12 +241,17 @@ export default function Homeworks() {
   };
 
   // Handle saving semester edit
-  const handleSaveSemesterEdit = () => {
+  const handleSaveSemesterEdit = async () => {
     if (editingSemesterValue.trim() && editingSemester) {
-      updateSemester(editingSemester, editingSemesterValue.trim());
-      setEditingSemester(null);
-      setEditingSemesterValue("");
-      message.success("Semester updated successfully!");
+      try {
+        await updateSemester(editingSemester, editingSemesterValue.trim());
+        setEditingSemester(null);
+        setEditingSemesterValue("");
+        message.success("Semester updated successfully!");
+      } catch (error) {
+        console.error('Failed to update semester:', error);
+        message.error("Failed to update semester");
+      }
     }
   };
 
@@ -255,7 +262,7 @@ export default function Homeworks() {
   };
 
   // Handle deleting semester
-  const handleDeleteSemester = (semester: string) => {
+  const handleDeleteSemester = async (semester: string) => {
     if (allSemesters.length <= 1) {
       message.error("Cannot delete the last semester!");
       return;
@@ -271,8 +278,30 @@ export default function Homeworks() {
       return;
     }
     
-    removeSemester(semester);
-    message.success("Semester deleted successfully!");
+    // Show confirmation popup
+    Modal.confirm({
+      title: 'Delete Semester',
+      content: (
+        <div>
+          <p>Are you sure you want to delete <strong>{semester}</strong>?</p>
+          <p style={{ color: '#ff4d4f', marginTop: 8 }}>
+            ⚠️ Warning: This action cannot be undone. All courses, homeworks, and exams associated with this semester will be permanently deleted.
+          </p>
+        </div>
+      ),
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          await removeSemester(semester);
+          message.success("Semester deleted successfully!");
+        } catch (error) {
+          console.error('Failed to delete semester:', error);
+          message.error("Failed to delete semester");
+        }
+      },
+    });
   };
 
   // Handle setting default semester
@@ -324,7 +353,7 @@ export default function Homeworks() {
   const handleUpdateHomeworkField = async (homeworkId: number, field: string, value: any) => {
     if (!token) return;
     try {
-      const updatedHomework = await updateHomework(homeworkId, { [field]: value });
+      await updateHomework(homeworkId, { [field]: value });
       
       // Update local state immediately
       updateLocalHomework(homeworkId, { [field]: value });
@@ -699,6 +728,11 @@ export default function Homeworks() {
               padding: 0
             }}
             onClick={() => setProfileVisible(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setProfileVisible(false);
+              }
+            }}
           >
             <Card
               style={{

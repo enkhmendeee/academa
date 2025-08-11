@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Layout, Menu, Typography, Card, Row, Col, Button, Input, message, Select} from "antd";
+import { Layout, Menu, Typography, Card, Row, Col, Button, Input, message, Select, Modal} from "antd";
 import DataVisualizations from "../components/DataVisualizations";
 import {
   HomeOutlined,
@@ -58,51 +58,42 @@ export default function Home() {
 
   // Update motto
   const handleSaveMotto = async () => {
-    console.log("handleSaveMotto called");
-    console.log("Current mottoValue:", mottoValue);
-    console.log("Current token:", token);
-    console.log("Current user:", user);
-    
     if (!token) {
-      console.log("No token found");
       message.error("No authentication token found");
       return;
     }
     
     if (!mottoValue.trim()) {
-      console.log("Empty motto value");
       message.error("Motto cannot be empty");
       return;
     }
     
     try {
-      console.log("Calling updateProfile with:", { motto: mottoValue });
       const updatedUser = await updateProfile({ motto: mottoValue });
-      console.log("Updated user response:", updatedUser);
       
       // Update the user in context
       login(token, updatedUser);
       setEditingMotto(false);
       message.success("Motto updated successfully!");
-      console.log("Motto update completed successfully");
     } catch (error: any) {
       console.error("Error updating motto:", error);
-      if (error.response) {
-        console.error("Error response:", error.response.data);
-        console.error("Error status:", error.response.status);
-      }
       message.error("Failed to update motto");
     }
   };
 
   // Semester management functions
-  const handleAddNewSemester = () => {
+  const handleAddNewSemester = async () => {
     if (newSemesterValue.trim()) {
       const newSemester = newSemesterValue.trim();
-      addSemester(newSemester);
-      setSelectedSemester(newSemester);
-      setNewSemesterValue("");
-      message.success("New semester added!");
+      try {
+        await addSemester(newSemester);
+        setSelectedSemester(newSemester);
+        setNewSemesterValue("");
+        message.success("New semester added!");
+      } catch (error) {
+        console.error('Failed to add semester:', error);
+        message.error("Failed to add semester");
+      }
     }
   };
 
@@ -111,12 +102,17 @@ export default function Home() {
     setEditingSemesterValue(semester);
   };
 
-  const handleSaveSemesterEdit = () => {
+  const handleSaveSemesterEdit = async () => {
     if (editingSemesterValue.trim() && editingSemester) {
-      updateSemester(editingSemester, editingSemesterValue.trim());
-      setEditingSemester(null);
-      setEditingSemesterValue("");
-      message.success("Semester updated successfully!");
+      try {
+        await updateSemester(editingSemester, editingSemesterValue.trim());
+        setEditingSemester(null);
+        setEditingSemesterValue("");
+        message.success("Semester updated successfully!");
+      } catch (error) {
+        console.error('Failed to update semester:', error);
+        message.error("Failed to update semester");
+      }
     }
   };
 
@@ -125,7 +121,7 @@ export default function Home() {
     setEditingSemesterValue("");
   };
 
-  const handleDeleteSemester = (semester: string) => {
+  const handleDeleteSemester = async (semester: string) => {
     if (allSemesters.length <= 1) {
       message.error("Cannot delete the last semester!");
       return;
@@ -141,8 +137,30 @@ export default function Home() {
       return;
     }
     
-    removeSemester(semester);
-    message.success("Semester deleted successfully!");
+    // Show confirmation popup
+    Modal.confirm({
+      title: 'Delete Semester',
+      content: (
+        <div>
+          <p>Are you sure you want to delete <strong>{semester}</strong>?</p>
+          <p style={{ color: '#ff4d4f', marginTop: 8 }}>
+            ⚠️ Warning: This action cannot be undone. All courses, homeworks, and exams associated with this semester will be permanently deleted.
+          </p>
+        </div>
+      ),
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          await removeSemester(semester);
+          message.success("Semester deleted successfully!");
+        } catch (error) {
+          console.error('Failed to delete semester:', error);
+          message.error("Failed to delete semester");
+        }
+      },
+    });
   };
 
   const handleSetDefaultSemester = (semester: string) => {
@@ -319,10 +337,7 @@ export default function Home() {
                 <Button
                   type="text"
                   icon={<CheckOutlined />}
-                  onClick={() => {
-                    console.log("Confirm button clicked!");
-                    handleSaveMotto();
-                  }}
+                  onClick={handleSaveMotto}
                   style={{ color: "#1976d2", padding: 4 }}
                   size="small"
                 />
@@ -385,6 +400,11 @@ export default function Home() {
               padding: 0
             }}
             onClick={() => setProfileVisible(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setProfileVisible(false);
+              }
+            }}
           >
             <Card
               style={{

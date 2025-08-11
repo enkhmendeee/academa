@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Menu, Typography, Card, Row, Col, Button, List, Select, Input, message, Popconfirm, Dropdown } from "antd";
+import { Layout, Menu, Typography, Card, Row, Col, Button, List, Select, Input, message, Popconfirm, Dropdown, Modal } from "antd";
 import ReactApexChart from 'react-apexcharts';
 import {
   HomeOutlined,
@@ -152,32 +152,31 @@ export default function Courses() {
   // Handle course color update
   const handleUpdateCourseColor = async (courseId: number, color: string) => {
     if (!token) return;
-    console.log("Updating course color:", { courseId, color });
     try {
-      const result = await updateCourse(courseId, { color });
-      console.log("Course color update result:", result);
+      await updateCourse(courseId, { color });
       message.success("Course color updated successfully!");
       
       // Update the course color locally without refetching all data
       updateLocalCourse(courseId, { color });
     } catch (error: any) {
       console.error("Failed to update course color:", error);
-      if (error.response) {
-        console.error("Error response:", error.response.data);
-        console.error("Error status:", error.response.status);
-      }
       message.error("Failed to update course color");
     }
   };
 
   // Semester management functions
-  const handleAddNewSemester = () => {
+  const handleAddNewSemester = async () => {
     if (newSemesterValue.trim()) {
       const newSemester = newSemesterValue.trim();
-      addSemester(newSemester);
-      setSelectedSemester(newSemester);
-      setNewSemesterValue("");
-      message.success("New semester added!");
+      try {
+        await addSemester(newSemester);
+        setSelectedSemester(newSemester);
+        setNewSemesterValue("");
+        message.success("New semester added!");
+      } catch (error) {
+        console.error('Failed to add semester:', error);
+        message.error("Failed to add semester");
+      }
     }
   };
 
@@ -186,12 +185,17 @@ export default function Courses() {
     setEditingSemesterValue(semester);
   };
 
-  const handleSaveSemesterEdit = () => {
+  const handleSaveSemesterEdit = async () => {
     if (editingSemesterValue.trim() && editingSemester) {
-      updateSemester(editingSemester, editingSemesterValue.trim());
-      setEditingSemester(null);
-      setEditingSemesterValue("");
-      message.success("Semester updated successfully!");
+      try {
+        await updateSemester(editingSemester, editingSemesterValue.trim());
+        setEditingSemester(null);
+        setEditingSemesterValue("");
+        message.success("Semester updated successfully!");
+      } catch (error) {
+        console.error('Failed to update semester:', error);
+        message.error("Failed to update semester");
+      }
     }
   };
 
@@ -200,7 +204,7 @@ export default function Courses() {
     setEditingSemesterValue("");
   };
 
-  const handleDeleteSemester = (semester: string) => {
+  const handleDeleteSemester = async (semester: string) => {
     if (allSemesters.length <= 1) {
       message.error("Cannot delete the last semester!");
       return;
@@ -216,8 +220,30 @@ export default function Courses() {
       return;
     }
     
-    removeSemester(semester);
-    message.success("Semester deleted successfully!");
+    // Show confirmation popup
+    Modal.confirm({
+      title: 'Delete Semester',
+      content: (
+        <div>
+          <p>Are you sure you want to delete <strong>{semester}</strong>?</p>
+          <p style={{ color: '#ff4d4f', marginTop: 8 }}>
+            ⚠️ Warning: This action cannot be undone. All courses, homeworks, and exams associated with this semester will be permanently deleted.
+          </p>
+        </div>
+      ),
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          await removeSemester(semester);
+          message.success("Semester deleted successfully!");
+        } catch (error) {
+          console.error('Failed to delete semester:', error);
+          message.error("Failed to delete semester");
+        }
+      },
+    });
   };
 
   const handleSetDefaultSemester = (semester: string) => {
@@ -226,11 +252,17 @@ export default function Courses() {
   };
 
   // Handle semester selection from dropdown
-  const handleSemesterChange = (semester: string) => {
+  const handleSemesterChange = async (semester: string) => {
     setSelectedSemester(semester);
     // If the selected semester is not in allSemesters, add it
     if (!allSemesters.includes(semester)) {
-      addSemester(semester);
+      try {
+        await addSemester(semester);
+      } catch (error) {
+        console.error('Failed to add semester:', error);
+        // Revert the selection if adding failed
+        setSelectedSemester(selectedSemester);
+      }
     }
   };
 
@@ -502,6 +534,11 @@ export default function Courses() {
               padding: 0
             }}
             onClick={() => setProfileVisible(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setProfileVisible(false);
+              }
+            }}
           >
             <Card
               style={{

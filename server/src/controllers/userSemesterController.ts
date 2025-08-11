@@ -81,6 +81,8 @@ export const deleteUserSemester = async (req: Request, res: Response) => {
   const userId = req.user.id;
   const { name } = req.params;
 
+  console.log('Delete semester request:', { userId, name, params: req.params });
+
   if (!name || typeof name !== 'string') {
     return res.status(400).json({ error: "Semester name is required" });
   }
@@ -101,6 +103,22 @@ export const deleteUserSemester = async (req: Request, res: Response) => {
 
     if (hasCourses || hasHomeworks || hasExams) {
       return res.status(400).json({ error: "Cannot delete semester with existing data" });
+    }
+
+    // Check if semester exists before trying to delete
+    const existingSemester = await prisma.userSemester.findUnique({
+      where: {
+        userId_name: {
+          userId,
+          name: name.trim()
+        }
+      }
+    });
+
+    console.log('Existing semester check:', { existingSemester, userId, name: name.trim() });
+
+    if (!existingSemester) {
+      return res.status(404).json({ error: "Semester not found" });
     }
 
     await prisma.userSemester.delete({
