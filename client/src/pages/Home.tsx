@@ -223,14 +223,15 @@ export default function Home() {
         <div style={{
           color: "#ffffff",
           fontWeight: 700,
-          fontSize: 28,
+          fontSize: 36,
           textAlign: "center",
           marginBottom: 32,
           letterSpacing: 1,
           userSelect: 'none',
-          cursor: 'default'
+          cursor: 'default',
+          fontFamily: "'Keania One', cursive"
         }}>
-          Academa
+          academa
         </div>
         <Menu
           mode="inline"
