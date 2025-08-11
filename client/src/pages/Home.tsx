@@ -21,7 +21,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 export default function Home() {
-  const { token, user, login, logout } = useAuth();
+  const { token, user, login, logout, selectedSemester } = useAuth();
   const navigate = useNavigate();
   const [homeworks, setHomeworks] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
@@ -31,7 +31,18 @@ export default function Home() {
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
   const [profileVisible, setProfileVisible] = useState(false);
 
-  // Common semester options
+  // Filter data by selected semester
+  const filteredHomeworks = selectedSemester === "all" 
+    ? homeworks 
+    : homeworks.filter(hw => (hw.semester || hw.course?.semester) === selectedSemester);
+
+  const filteredCourses = selectedSemester === "all" 
+    ? courses 
+    : courses.filter(course => course.semester === selectedSemester);
+
+  const filteredExams = selectedSemester === "all" 
+    ? exams 
+    : exams.filter(exam => (exam.semester || exam.course?.semester) === selectedSemester);
 
 
   // Fetch data
@@ -396,10 +407,9 @@ export default function Home() {
         <Content style={{ padding: "16px 32px", background: "linear-gradient(180deg, #ffffff 0%, #bbdefb 100%)", minHeight: 0 }}>
           <Row gutter={[32, 32]} justify="center">
 
-
             {/* Data Visualizations */}
             <Col span={24}>
-              <DataVisualizations homeworks={homeworks} courses={courses} exams={exams} />
+              <DataVisualizations homeworks={filteredHomeworks} courses={filteredCourses} exams={filteredExams} />
             </Col>
           </Row>
         </Content>

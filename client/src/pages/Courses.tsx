@@ -15,6 +15,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { getCourses, updateCourse, deleteCourse } from "../services/course";
 import { getHomeworks } from "../services/homework";
+import { getExams } from "../services/exam";
 import { updateProfile } from "../services/auth";
 
 const { Sider, Header, Content } = Layout;
@@ -22,7 +23,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 export default function Courses() {
-  const { token, user, login, logout, selectedSemester, setSelectedSemester } = useAuth();
+  const { token, user, login, logout, selectedSemester, setSelectedSemester, allSemesters, addSemester } = useAuth();
   
   // Add CSS animation for smooth slide-down effect
   React.useEffect(() => {
@@ -50,6 +51,7 @@ export default function Courses() {
   const location = useLocation();
   const [courses, setCourses] = useState<any[]>([]);
   const [homeworks, setHomeworks] = useState<any[]>([]);
+  const [exams, setExams] = useState<any[]>([]);
   const [editingMotto, setEditingMotto] = useState(false);
   const [mottoValue, setMottoValue] = useState(user?.motto || "");
   const [editingCourse, setEditingCourse] = useState<number | null>(null);
@@ -71,12 +73,14 @@ export default function Courses() {
   const fetchData = async () => {
     if (!token) return;
     try {
-      const [coursesData, homeworksData] = await Promise.all([
+      const [coursesData, homeworksData, examsData] = await Promise.all([
         getCourses(),
-        getHomeworks()
+        getHomeworks(),
+        getExams()
       ]);
       setCourses(coursesData);
       setHomeworks(homeworksData);
+      setExams(examsData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
     }
@@ -208,11 +212,15 @@ export default function Courses() {
     }
   };
 
-  // Get unique semesters from courses
-  const existingSemesters = Array.from(new Set(courses.map(course => course.semester).filter(Boolean)));
+  // Get unique semesters from courses, homeworks, and exams
+  const existingSemesters = Array.from(new Set([
+    ...courses.map(course => course.semester).filter(Boolean),
+    ...homeworks.map(hw => hw.semester || hw.course?.semester).filter(Boolean),
+    ...exams.map(exam => exam.semester || exam.course?.semester).filter(Boolean)
+  ]));
   
-  // Get unique semesters from courses
-  const semesters = existingSemesters;
+  // Combine existing semesters with user-defined ones
+  const semesters = Array.from(new Set([...existingSemesters, ...allSemesters]));
 
   // Filter courses by selected semester
   const filteredCourses = selectedSemester === "all" 
@@ -537,9 +545,18 @@ export default function Courses() {
                 style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)", marginBottom: 24 }}
               >
                 {(() => {
-                  // Calculate course-wise homework distribution
-                  const courseDistribution = courses.map(course => {
-                    const courseHomeworks = homeworks.filter(hw => hw.courseId === course.id);
+                  // Filter courses and homeworks by selected semester
+                  const currentSemesterCourses = selectedSemester === "all" 
+                    ? courses 
+                    : courses.filter(course => course.semester === selectedSemester);
+                  
+                  const currentSemesterHomeworks = selectedSemester === "all"
+                    ? homeworks
+                    : homeworks.filter(hw => (hw.semester || hw.course?.semester) === selectedSemester);
+
+                  // Calculate course-wise homework distribution for current semester
+                  const courseDistribution = currentSemesterCourses.map(course => {
+                    const courseHomeworks = currentSemesterHomeworks.filter(hw => hw.courseId === course.id);
                     return {
                       name: course.name,
                       value: courseHomeworks.length,
@@ -594,8 +611,8 @@ export default function Courses() {
                       />
                       <div style={{ marginTop: 16 }}>
                         <Text type="secondary">
-                          Total Homeworks: {homeworks.length} | 
-                          Courses with Homeworks: {courseDistribution.length}
+                          {selectedSemester === "all" ? "All Semesters" : selectedSemester}: {currentSemesterHomeworks.length} homeworks | 
+                          {courseDistribution.length} courses
                         </Text>
                       </div>
                     </div>
@@ -621,9 +638,18 @@ export default function Courses() {
                     style={{ borderRadius: 12, border: "none", boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}
                   >
                     {(() => {
-                      // Course-wise homework distribution
-                      const courseData = courses.map(course => {
-                        const courseHomeworks = homeworks.filter(hw => hw.courseId === course.id);
+                      // Filter courses and homeworks by selected semester
+                      const currentSemesterCourses = selectedSemester === "all" 
+                        ? courses 
+                        : courses.filter(course => course.semester === selectedSemester);
+                      
+                      const currentSemesterHomeworks = selectedSemester === "all"
+                        ? homeworks
+                        : homeworks.filter(hw => (hw.semester || hw.course?.semester) === selectedSemester);
+
+                      // Course-wise homework distribution for current semester
+                      const courseData = currentSemesterCourses.map(course => {
+                        const courseHomeworks = currentSemesterHomeworks.filter(hw => hw.courseId === course.id);
                         return {
                           name: course.name,
                           total: courseHomeworks.length,
@@ -714,8 +740,8 @@ export default function Courses() {
                           />
                           <div style={{ marginTop: 16 }}>
                             <Text type="secondary">
-                              Total Courses: {courseData.length} | 
-                              Total Homeworks: {courseData.reduce((sum, course) => sum + course.total, 0)}
+                              {selectedSemester === "all" ? "All Semesters" : selectedSemester}: {courseData.length} courses | 
+                              {courseData.reduce((sum, course) => sum + course.total, 0)} homeworks
                             </Text>
                           </div>
                         </div>

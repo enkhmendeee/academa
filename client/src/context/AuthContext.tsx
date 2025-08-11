@@ -15,6 +15,8 @@ interface AuthContextType {
   logout: () => void;
   selectedSemester: string;
   setSelectedSemester: (semester: string) => void;
+  allSemesters: string[];
+  addSemester: (semester: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,7 +28,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return savedUser ? JSON.parse(savedUser) : null;
   });
   const [selectedSemester, setSelectedSemester] = useState<string>(() => {
-    return localStorage.getItem('selectedSemester') || 'Fall 2024';
+    return localStorage.getItem('selectedSemester') || 'Spring 2025';
+  });
+  const [allSemesters, setAllSemesters] = useState<string[]>(() => {
+    const savedSemesters = localStorage.getItem('allSemesters');
+    return savedSemesters ? JSON.parse(savedSemesters) : ['Spring 2025', 'Fall 2024', 'Summer 2024'];
   });
 
   const login = (newToken: string, newUser: User) => {
@@ -48,6 +54,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('selectedSemester', semester);
   };
 
+  const addSemester = (semester: string) => {
+    if (!allSemesters.includes(semester)) {
+      const updatedSemesters = [...allSemesters, semester];
+      setAllSemesters(updatedSemesters);
+      localStorage.setItem('allSemesters', JSON.stringify(updatedSemesters));
+    }
+  };
+
   return (
     <AuthContext.Provider value={useMemo(() => ({
       token,
@@ -57,7 +71,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       logout,
       selectedSemester,
       setSelectedSemester: updateSelectedSemester,
-    }), [token, user, selectedSemester])}>
+      allSemesters,
+      addSemester,
+    }), [token, user, selectedSemester, allSemesters])}>
       {children}
     </AuthContext.Provider>
   );

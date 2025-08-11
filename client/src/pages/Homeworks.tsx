@@ -27,7 +27,7 @@ const { Option } = Select;
 
 
 export default function Homeworks() {
-  const { token, user, login, logout, selectedSemester, setSelectedSemester } = useAuth();
+  const { token, user, login, logout, selectedSemester, setSelectedSemester, allSemesters, addSemester } = useAuth();
   const navigate = useNavigate();
   const [homeworks, setHomeworks] = useState<any[]>([]);
   const [exams, setExams] = useState<any[]>([]);
@@ -46,7 +46,7 @@ export default function Homeworks() {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [addingNewSemester, setAddingNewSemester] = useState(false);
   const [newSemesterValue, setNewSemesterValue] = useState("");
-  const [allSemesters, setAllSemesters] = useState<string[]>([]);
+
   const [profileVisible, setProfileVisible] = useState(false);
   
   // Filter and sort states
@@ -247,8 +247,8 @@ export default function Homeworks() {
   const handleAddNewSemester = () => {
     if (newSemesterValue.trim()) {
       const newSemester = newSemesterValue.trim();
+      addSemester(newSemester);
       setSelectedSemester(newSemester);
-      setAllSemesters(prev => [...prev, newSemester]);
       setAddingNewSemester(false);
       setNewSemesterValue("");
       message.success("New semester added!");
@@ -351,10 +351,14 @@ export default function Homeworks() {
     }
   };
 
-  // Get unique semesters from homeworks
-  const existingSemesters = Array.from(new Set(homeworks.map(hw => hw.semester || hw.course?.semester).filter(Boolean)));
+  // Get unique semesters from homeworks and courses
+  const existingSemesters = Array.from(new Set([
+    ...homeworks.map(hw => hw.semester || hw.course?.semester).filter(Boolean),
+    ...exams.map(exam => exam.semester || exam.course?.semester).filter(Boolean),
+    ...courses.map(course => course.semester).filter(Boolean)
+  ]));
   
-  // Combine existing semesters with newly added ones
+  // Combine existing semesters with user-defined ones
   const semesters = Array.from(new Set([...existingSemesters, ...allSemesters]));
 
   // Filter and sort homeworks
