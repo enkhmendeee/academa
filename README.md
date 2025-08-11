@@ -165,21 +165,13 @@ Academa is a comprehensive academic management system designed to help students 
 ### Dashboard Overview
 <img width="1717" height="960" alt="Screenshot 2025-08-11 at 2 20 06 PM" src="https://github.com/user-attachments/assets/1c3845b7-671c-473e-ac58-9807a3fc317f" />
 
-
-![Dashboard Overview](<img width="1717" height="960" alt="Screenshot 2025-08-11 at 2 20 06 PM" src="https://github.com/user-attachments/assets/56e111ae-5368-411e-b19e-3cc83821eeee" />)
-*Main dashboard showing data visualizations, course progress, and assignment overview*
-
 ### Course Management
-![Course Management](images/course-management.png)
-*Courses page displaying color-coded course cards with progress tracking*
+<img width="1717" height="960" alt="Screenshot 2025-08-11 at 2 20 23 PM" src="https://github.com/user-attachments/assets/ea0e0d41-77a7-4390-b3da-ceffd93e6c61" />
+
 
 ### Assignment Tracking
-![Assignment Tracking](images/assignment-tracking.png)
-*Homeworks page with advanced filtering, sorting, and status management*
+<img width="1717" height="960" alt="Screenshot 2025-08-11 at 2 20 06 PM" src="https://github.com/user-attachments/assets/05e086fe-ea10-4257-96b9-7356a5c88e62" />
 
-### Profile Management
-![Profile Management](images/profile-management.png)
-*User profile popup with semester management and account settings*
 
 ## 🔧 API Endpoints
 
