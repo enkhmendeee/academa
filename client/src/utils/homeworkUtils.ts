@@ -66,3 +66,17 @@ export const vibrantColors = [
   '#8bc34a', // Light Green
   '#ffc107'  // Yellow
 ];
+
+// Utility function to filter data by semester
+export const filterBySemester = (data: any[], selectedSemester: string, semesterField: string = 'semester', courseField: string = 'course') => {
+  if (!selectedSemester) return data;
+  
+  return data.filter(item => {
+    // Check if the item has a semester field
+    if (item[semesterField] === selectedSemester) return true;
+    // Check if the item's course has a semester field
+    if (item[courseField]?.[semesterField] === selectedSemester) return true;
+    // If neither has a semester, don't include it
+    return false;
+  });
+};

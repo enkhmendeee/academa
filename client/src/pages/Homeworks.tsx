@@ -20,7 +20,7 @@ import { updateProfile } from "../services/auth";
 import { AssignmentForm } from "../components/AssignmentForm";
 import { FilterControls } from "../components/FilterControls";
 import { HomeworkTable } from "../components/HomeworkTable";
-import { getStatusColor, getStatusDisplayText, compareValues, vibrantColors } from "../utils/homeworkUtils";
+import { getStatusColor, getStatusDisplayText, compareValues, vibrantColors, filterBySemester } from "../utils/homeworkUtils";
 
 const { Sider, Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -404,11 +404,8 @@ export default function Homeworks() {
   const hasSemesters = semesters.length > 0;
 
   // Filter and sort homeworks
-  const filteredAndSortedHomeworks = homeworks
+  const filteredAndSortedHomeworks = filterBySemester(homeworks, selectedSemester)
     .filter(hw => {
-      // Semester filter
-      const semesterMatch = (hw.semester || hw.course?.semester) === selectedSemester;
-      
       // Status filter
       const statusMatch = statusFilter === "all" || hw.status === statusFilter;
       
@@ -418,7 +415,7 @@ export default function Homeworks() {
       // Hide completed filter
       const completedMatch = !hideCompleted || hw.status !== "COMPLETED";
       
-      return semesterMatch && statusMatch && courseMatch && completedMatch;
+      return statusMatch && courseMatch && completedMatch;
     })
     .sort((a, b) => {
       let aValue: any, bValue: any;
@@ -451,11 +448,8 @@ export default function Homeworks() {
     });
 
   // Filter and sort exams
-  const filteredAndSortedExams = exams
+  const filteredAndSortedExams = filterBySemester(exams, selectedSemester)
     .filter(exam => {
-      // Semester filter
-      const semesterMatch = (exam.semester || exam.course?.semester) === selectedSemester;
-      
       // Status filter
       const statusMatch = statusFilter === "all" || exam.status === statusFilter;
       
@@ -465,7 +459,7 @@ export default function Homeworks() {
       // Hide completed filter
       const completedMatch = !hideCompleted || exam.status !== "COMPLETED";
       
-      return semesterMatch && statusMatch && courseMatch && completedMatch;
+      return statusMatch && courseMatch && completedMatch;
     })
     .sort((a, b) => {
       let aValue: any, bValue: any;

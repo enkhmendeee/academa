@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useData } from "../context/DataContext";
 import { updateProfile } from "../services/auth";
+import { filterBySemester } from "../utils/homeworkUtils";
 
 const { Sider, Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -52,9 +53,9 @@ export default function Home() {
   }, [loading, homeworks, exams, courses, allSemesters, setLatestSemester]);
 
   // Filter data by selected semester
-  const filteredHomeworks = homeworks.filter(hw => (hw.semester || hw.course?.semester) === selectedSemester);
+  const filteredHomeworks = filterBySemester(homeworks, selectedSemester);
   const filteredCourses = courses.filter(course => course.semester === selectedSemester);
-  const filteredExams = exams.filter(exam => (exam.semester || exam.course?.semester) === selectedSemester);
+  const filteredExams = filterBySemester(exams, selectedSemester);
 
   // Update motto
   const handleSaveMotto = async () => {
