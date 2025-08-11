@@ -163,16 +163,20 @@ Academa is a comprehensive academic management system designed to help students 
 ## 🎨 Screenshots
 
 ### Dashboard Overview
-[Insert screenshot of the main dashboard showing data visualizations and overview]
+![Dashboard Overview](images/dashboard-overview.png)
+*Main dashboard showing data visualizations, course progress, and assignment overview*
 
 ### Course Management
-[Insert screenshot of the courses page showing color-coded course cards]
+![Course Management](images/course-management.png)
+*Courses page displaying color-coded course cards with progress tracking*
 
 ### Assignment Tracking
-[Insert screenshot of the homeworks page showing the assignment table and filters]
+![Assignment Tracking](images/assignment-tracking.png)
+*Homeworks page with advanced filtering, sorting, and status management*
 
 ### Profile Management
-[Insert screenshot of the user profile popup with semester management]
+![Profile Management](images/profile-management.png)
+*User profile popup with semester management and account settings*
 
 ## 🔧 API Endpoints
 
@@ -283,7 +287,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-For support, email support@academa.com or create an issue in the GitHub repository.
+For support, email nergui.eegii04@gmail.com or create an issue in the GitHub repository.
 
 ---
 
