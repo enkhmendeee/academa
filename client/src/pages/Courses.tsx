@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Menu, Typography, Card, Row, Col, Button, List, Select, Input, message, Popconfirm } from "antd";
+import { Layout, Menu, Typography, Card, Row, Col, Button, List, Select, Input, message, Popconfirm, Dropdown } from "antd";
 import ReactApexChart from 'react-apexcharts';
 import {
   HomeOutlined,
@@ -9,6 +9,7 @@ import {
   CheckOutlined,
   DeleteOutlined,
   LogoutOutlined,
+  BgColorsOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -22,6 +23,29 @@ const { Option } = Select;
 
 export default function Courses() {
   const { token, user, login, logout, selectedSemester, setSelectedSemester } = useAuth();
+  
+  // Add CSS animation for smooth slide-down effect
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
+    };
+  }, []);
   const navigate = useNavigate();
   const location = useLocation();
   const [courses, setCourses] = useState<any[]>([]);
@@ -61,6 +85,8 @@ export default function Courses() {
   useEffect(() => {
     fetchData();
   }, [token]);
+
+
 
   // Update motto
   const handleSaveMotto = async () => {
@@ -120,7 +146,52 @@ export default function Courses() {
     }
   };
 
+  // Handle course color update
+  const handleUpdateCourseColor = async (courseId: number, color: string) => {
+    if (!token) return;
+    console.log("Updating course color:", { courseId, color });
+    try {
+      const result = await updateCourse(courseId, { color });
+      console.log("Course color update result:", result);
+      message.success("Course color updated successfully!");
+      
+      // Update the course color locally without refetching all data
+      setCourses(prevCourses => 
+        prevCourses.map(course => 
+          course.id === courseId 
+            ? { ...course, color: color }
+            : course
+        )
+      );
+    } catch (error: any) {
+      console.error("Failed to update course color:", error);
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+        console.error("Error status:", error.response.status);
+      }
+      message.error("Failed to update course color");
+    }
+  };
 
+  // Vibrant color palette for courses
+  const vibrantColors = [
+    '#1976d2', // Blue
+    '#e91e63', // Pink
+    '#9c27b0', // Purple
+    '#ff5722', // Orange
+    '#4caf50', // Green
+    '#ff9800', // Amber
+    '#00bcd4', // Cyan
+    '#f44336', // Red
+    '#673ab7', // Deep Purple
+    '#3f51b5', // Indigo
+    '#009688', // Teal
+    '#ff4081', // Pink
+    '#795548', // Brown
+    '#607d8b', // Blue Grey
+    '#8bc34a', // Light Green
+    '#ffc107'  // Yellow
+  ];
 
   // Navigation handler
   const handleMenuClick = ({ key }: { key: string }) => {
@@ -472,16 +543,9 @@ export default function Courses() {
                     return {
                       name: course.name,
                       value: courseHomeworks.length,
-                      color: `hsl(${Math.random() * 360}, 70%, 50%)` // Generate random colors
+                      color: course.color || '#1976d2' // Use course's actual color
                     };
                   }).filter(course => course.value > 0);
-
-                  // Generate colors for courses - Vibrant palette
-                  const colors = [
-                    '#1976d2', '#43a047', '#ff9800', '#e91e63',
-                    '#9c27b0', '#00bcd4', '#ff5722', '#4caf50',
-                    '#ffc107', '#795548', '#607d8b', '#3f51b5'
-                  ];
 
                   const pieChartOptions = {
                     chart: {
@@ -491,7 +555,7 @@ export default function Courses() {
                       }
                     },
                     labels: courseDistribution.map((course, index) => course.name),
-                    colors: courseDistribution.map((_, index) => colors[index % colors.length]),
+                    colors: courseDistribution.map((course, index) => course.color),
                     legend: {
                       show: false
                     },
@@ -674,11 +738,12 @@ export default function Courses() {
 
             {/* Course Cards */}
             <Col span={24}>
-              <Row gutter={[24, 24]} justify="center">
+              <Row gutter={[24, 24]} justify="center" style={{ display: 'flex', flexWrap: 'wrap' }}>
                 {filteredCourses.length > 0 ? (
                   filteredCourses.map((course, index) => (
-                    <Col key={course.id} xs={24} sm={12} md={8} lg={6}>
+                    <Col key={course.id} xs={24} sm={12} md={8} lg={6} style={{ order: index }}>
                       <Card
+                        key={`card-${course.id}`}
                         title={
                           <div style={{ 
                             color: "#1976d2", 
@@ -689,27 +754,81 @@ export default function Courses() {
                             alignItems: "center",
                             justifyContent: "space-between"
                           }}>
-                            {editingCourse === course.id && editingField === 'name' ? (
-                              <Input
-                                value={courseEditValues[course.id]?.name || course.name}
-                                onChange={(e) => setCourseEditValues(prev => ({
-                                  ...prev,
-                                  [course.id]: { ...prev[course.id], name: e.target.value }
-                                }))}
-                                onPressEnter={(e: any) => handleUpdateCourse(course.id, 'name', e.target.value)}
-                                onBlur={() => setEditingCourse(null)}
-                                autoFocus
-                                style={{ flex: 1, marginRight: 8 }}
-                              />
-                            ) : (
-                              <Button
-                                type="text"
-                                style={{ flex: 1, textAlign: "left", padding: 0, height: "auto", color: "#1976d2", fontWeight: 600, fontSize: 16 }}
-                                onClick={() => handleEditCourse(course.id, 'name')}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                                                            {/* Color Picker Button */}
+                              <Dropdown
+                                menu={{
+                                  items: vibrantColors.map((color, index) => ({
+                                    key: color,
+                                    label: (
+                                      <div style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: 8,
+                                        padding: '4px 0'
+                                      }}>
+                                        <div style={{
+                                          width: 20,
+                                          height: 20,
+                                          borderRadius: '50%',
+                                          backgroundColor: color,
+                                          border: (course.color || '#1976d2') === color ? '2px solid #333' : '1px solid #d9d9d9',
+                                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                        }} />
+                                        <span style={{ fontSize: '12px' }}>
+                                          {color.toUpperCase()}
+                                        </span>
+                                      </div>
+                                    ),
+                                    onClick: () => handleUpdateCourseColor(course.id, color)
+                                  }))
+                                }}
+                                trigger={['click']}
+                                placement="bottomLeft"
                               >
-                                {course.name}
-                              </Button>
-                            )}
+                                <Button
+                                  type="text"
+                                  icon={<BgColorsOutlined />}
+                                  style={{ 
+                                    color: course.color || "#1976d2", 
+                                    padding: 4,
+                                    borderRadius: '50%',
+                                    width: 32,
+                                    height: 32,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    border: `2px solid ${course.color || "#1976d2"}`,
+                                    backgroundColor: `${(course.color || "#1976d2")}15`,
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                  size="small"
+                                />
+                              </Dropdown>
+                              
+                              {editingCourse === course.id && editingField === 'name' ? (
+                                <Input
+                                  value={courseEditValues[course.id]?.name || course.name}
+                                  onChange={(e) => setCourseEditValues(prev => ({
+                                    ...prev,
+                                    [course.id]: { ...prev[course.id], name: e.target.value }
+                                  }))}
+                                  onPressEnter={(e: any) => handleUpdateCourse(course.id, 'name', e.target.value)}
+                                  onBlur={() => setEditingCourse(null)}
+                                  autoFocus
+                                  style={{ flex: 1 }}
+                                />
+                              ) : (
+                                <Button
+                                  type="text"
+                                  style={{ flex: 1, textAlign: "left", padding: 0, height: "auto", color: "#1976d2", fontWeight: 600, fontSize: 16 }}
+                                  onClick={() => handleEditCourse(course.id, 'name')}
+                                >
+                                  {course.name}
+                                </Button>
+                              )}
+                            </div>
+                            
                             <Popconfirm
                               title="Delete this course?"
                               onConfirm={() => handleDeleteCourse(course.id)}
@@ -729,17 +848,19 @@ export default function Courses() {
                           borderRadius: 12, 
                           border: `4px solid ${course.color || "#1976d2"}`, 
                           boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-                          height: Math.max(400, 300 + (getHomeworksForCourse(course.id).length * 40)),
+                          height: Math.max(400, 300 + (getHomeworksForCourse(course.id).length * 30)),
                           display: "flex",
                           flexDirection: "column",
-                          transition: "all 0.3s ease"
+                          transition: "border-color 0.3s ease, height 0.3s ease",
+                          overflow: "visible"
                         }}
                         styles={{
                           body: {
                             flex: 1,
                             padding: "12px 16px",
                             display: "flex",
-                            flexDirection: "column"
+                            flexDirection: "column",
+                            overflow: "visible"
                           }
                         }}
                       >

@@ -40,6 +40,7 @@ router.patch(
     body("name").optional().isString().notEmpty(),
     body("description").optional().isString(),
     body("semester").optional().isString(),
+    body("color").optional().isString(),
     validateRequest,
   ],
   updateCourse
