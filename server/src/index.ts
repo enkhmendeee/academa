@@ -5,6 +5,7 @@ import protectedRoutes from './routes/protected';
 import homeworkRoutes from './routes/homework.route';
 import courseRoutes from './routes/courseRoutes';
 import examRoutes from './routes/examRoutes';
+import userSemesterRoutes from './routes/userSemesterRoutes';
 import cors from "cors";
 
 const app = express();
@@ -34,6 +35,7 @@ app.use('/api', protectedRoutes);
 app.use('/api/homeworks', homeworkRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/exams', examRoutes);
+app.use('/api/semesters', userSemesterRoutes);
 
 app.get('/test', (req, res) => {
   res.json({ message: 'Server is working!' });

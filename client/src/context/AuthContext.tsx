@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
+import { getUserSemesters, addUserSemester as addSemesterAPI, updateUserSemester as updateSemesterAPI, deleteUserSemester as deleteSemesterAPI } from '../services/semester';
 
 interface User {
   id: number;
@@ -16,9 +17,9 @@ interface AuthContextType {
   selectedSemester: string;
   setSelectedSemester: (semester: string) => void;
   allSemesters: string[];
-  addSemester: (semester: string) => void;
-  removeSemester: (semester: string) => void;
-  updateSemester: (oldSemester: string, newSemester: string) => void;
+  addSemester: (semester: string) => Promise<void>;
+  removeSemester: (semester: string) => Promise<void>;
+  updateSemester: (oldSemester: string, newSemester: string) => Promise<void>;
   setLatestSemester: (availableSemesters: string[]) => void;
 }
 
@@ -33,23 +34,53 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [selectedSemester, setSelectedSemester] = useState<string>(() => {
     return localStorage.getItem('selectedSemester') || '';
   });
-  const [allSemesters, setAllSemesters] = useState<string[]>(() => {
-    const savedSemesters = localStorage.getItem('allSemesters');
-    return savedSemesters ? JSON.parse(savedSemesters) : [];
-  });
+  const [allSemesters, setAllSemesters] = useState<string[]>([]);
+  const [semestersLoaded, setSemestersLoaded] = useState(false);
+
+  // Load semesters from server when user is authenticated
+  useEffect(() => {
+    if (token && user && !semestersLoaded) {
+      const loadSemesters = async () => {
+        try {
+          const serverSemesters = await getUserSemesters();
+          setAllSemesters(serverSemesters);
+          setSemestersLoaded(true);
+        } catch (error) {
+          console.error('Failed to load semesters:', error);
+          setSemestersLoaded(true); // Mark as loaded even if failed to prevent infinite retries
+        }
+      };
+      loadSemesters();
+    }
+  }, [token, user, semestersLoaded]);
 
   const login = (newToken: string, newUser: User) => {
+    // Check if this is a different user logging in
+    const currentUser = localStorage.getItem('user');
+    const isNewUser = !currentUser || (currentUser && JSON.parse(currentUser).id !== newUser.id);
+    
     setToken(newToken);
     setUser(newUser);
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(newUser));
+    
+    // If this is a new user, reset semester state
+    if (isNewUser) {
+      setSelectedSemester('');
+      setAllSemesters([]);
+      setSemestersLoaded(false);
+    }
   };
 
   const logout = () => {
     setToken(null);
     setUser(null);
+    setAllSemesters([]);
+    setSelectedSemester('');
+    setSemestersLoaded(false);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('selectedSemester');
   };
 
   const updateSelectedSemester = (semester: string) => {
@@ -57,50 +88,65 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('selectedSemester', semester);
   };
 
-  const addSemester = (semester: string) => {
+  const addSemester = async (semester: string) => {
     if (!allSemesters.includes(semester)) {
-      const updatedSemesters = [...allSemesters, semester];
+      try {
+        await addSemesterAPI(semester);
+        const updatedSemesters = [...allSemesters, semester];
+        setAllSemesters(updatedSemesters);
+      } catch (error) {
+        console.error('Failed to add semester:', error);
+        throw error;
+      }
+    }
+  };
+
+  const removeSemester = async (semester: string) => {
+    try {
+      await deleteSemesterAPI(semester);
+      const updatedSemesters = allSemesters.filter(s => s !== semester);
       setAllSemesters(updatedSemesters);
-      localStorage.setItem('allSemesters', JSON.stringify(updatedSemesters));
-    }
-  };
-
-  const removeSemester = (semester: string) => {
-    const updatedSemesters = allSemesters.filter(s => s !== semester);
-    setAllSemesters(updatedSemesters);
-    localStorage.setItem('allSemesters', JSON.stringify(updatedSemesters));
-    
-    // If the removed semester was selected, set to latest available
-    if (selectedSemester === semester && updatedSemesters.length > 0) {
-      const sortedSemesters = [...updatedSemesters].sort((a, b) => {
-        const yearA = /\d{4}/.exec(a)?.[0] || '0';
-        const yearB = /\d{4}/.exec(b)?.[0] || '0';
-        
-        if (yearA !== yearB) {
-          return parseInt(yearB) - parseInt(yearA);
-        }
-        
-        const seasonOrder = { 'Spring': 4, 'Summer': 3, 'Fall': 2, 'Autumn': 2, 'Winter': 1 };
-        const seasonA = seasonOrder[a.split(' ')[0] as keyof typeof seasonOrder] || 0;
-        const seasonB = seasonOrder[b.split(' ')[0] as keyof typeof seasonOrder] || 0;
-        
-        return seasonB - seasonA;
-      });
       
-      updateSelectedSemester(sortedSemesters[0]);
+      // If the removed semester was selected, set to latest available
+      if (selectedSemester === semester && updatedSemesters.length > 0) {
+        const sortedSemesters = [...updatedSemesters].sort((a, b) => {
+          const yearA = /\d{4}/.exec(a)?.[0] || '0';
+          const yearB = /\d{4}/.exec(b)?.[0] || '0';
+          
+          if (yearA !== yearB) {
+            return parseInt(yearB) - parseInt(yearA);
+          }
+          
+          const seasonOrder = { 'Spring': 4, 'Summer': 3, 'Fall': 2, 'Autumn': 2, 'Winter': 1 };
+          const seasonA = seasonOrder[a.split(' ')[0] as keyof typeof seasonOrder] || 0;
+          const seasonB = seasonOrder[b.split(' ')[0] as keyof typeof seasonOrder] || 0;
+          
+          return seasonB - seasonA;
+        });
+        
+        updateSelectedSemester(sortedSemesters[0]);
+      }
+    } catch (error) {
+      console.error('Failed to remove semester:', error);
+      throw error;
     }
   };
 
-  const updateSemester = (oldSemester: string, newSemester: string) => {
+  const updateSemester = async (oldSemester: string, newSemester: string) => {
     if (oldSemester === newSemester) return;
     
-    const updatedSemesters = allSemesters.map(s => s === oldSemester ? newSemester : s);
-    setAllSemesters(updatedSemesters);
-    localStorage.setItem('allSemesters', JSON.stringify(updatedSemesters));
-    
-    // If the updated semester was selected, update the selection
-    if (selectedSemester === oldSemester) {
-      updateSelectedSemester(newSemester);
+    try {
+      await updateSemesterAPI(oldSemester, newSemester);
+      const updatedSemesters = allSemesters.map(s => s === oldSemester ? newSemester : s);
+      setAllSemesters(updatedSemesters);
+      
+      // If the updated semester was selected, update the selection
+      if (selectedSemester === oldSemester) {
+        updateSelectedSemester(newSemester);
+      }
+    } catch (error) {
+      console.error('Failed to update semester:', error);
+      throw error;
     }
   };
 
