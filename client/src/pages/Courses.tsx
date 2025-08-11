@@ -22,7 +22,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 export default function Courses() {
-  const { token, user, login, logout, selectedSemester, setSelectedSemester, allSemesters } = useAuth();
+  const { token, user, login, logout, selectedSemester, setSelectedSemester, allSemesters, addSemester, removeSemester, updateSemester, setLatestSemester } = useAuth();
   const { courses, homeworks, exams, loading, updateLocalCourse, removeLocalCourse } = useData();
   
   // Add CSS animation for smooth slide-down effect
@@ -55,6 +55,11 @@ export default function Courses() {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [courseEditValues, setCourseEditValues] = useState<{ [key: number]: { name: string; description: string } }>({});
   const [profileVisible, setProfileVisible] = useState(false);
+  
+  // Semester management states
+  const [editingSemester, setEditingSemester] = useState<string | null>(null);
+  const [editingSemesterValue, setEditingSemesterValue] = useState("");
+  const [newSemesterValue, setNewSemesterValue] = useState("");
 
   // Handle navigation state from Homeworks page
   useEffect(() => {
@@ -65,6 +70,24 @@ export default function Courses() {
       }
     }
   }, [location.state, selectedSemester, setSelectedSemester]);
+
+  // Auto-set latest semester when data is loaded
+  useEffect(() => {
+    if (!loading && (homeworks.length > 0 || exams.length > 0 || courses.length > 0)) {
+      // Get unique semesters from data
+      const existingSemesters = Array.from(new Set([
+        ...homeworks.map(hw => hw.semester || hw.course?.semester).filter(Boolean),
+        ...exams.map(exam => exam.semester || exam.course?.semester).filter(Boolean),
+        ...courses.map(course => course.semester).filter(Boolean)
+      ]));
+      
+      // Combine with user-defined semesters
+      const allAvailableSemesters = Array.from(new Set([...existingSemesters, ...allSemesters]));
+      
+      // Set to latest semester if needed
+      setLatestSemester(allAvailableSemesters);
+    }
+  }, [loading, homeworks, exams, courses, allSemesters, setLatestSemester]);
 
 
 
@@ -144,6 +167,70 @@ export default function Courses() {
         console.error("Error status:", error.response.status);
       }
       message.error("Failed to update course color");
+    }
+  };
+
+  // Semester management functions
+  const handleAddNewSemester = () => {
+    if (newSemesterValue.trim()) {
+      const newSemester = newSemesterValue.trim();
+      addSemester(newSemester);
+      setSelectedSemester(newSemester);
+      setNewSemesterValue("");
+      message.success("New semester added!");
+    }
+  };
+
+  const handleEditSemester = (semester: string) => {
+    setEditingSemester(semester);
+    setEditingSemesterValue(semester);
+  };
+
+  const handleSaveSemesterEdit = () => {
+    if (editingSemesterValue.trim() && editingSemester) {
+      updateSemester(editingSemester, editingSemesterValue.trim());
+      setEditingSemester(null);
+      setEditingSemesterValue("");
+      message.success("Semester updated successfully!");
+    }
+  };
+
+  const handleCancelSemesterEdit = () => {
+    setEditingSemester(null);
+    setEditingSemesterValue("");
+  };
+
+  const handleDeleteSemester = (semester: string) => {
+    if (allSemesters.length <= 1) {
+      message.error("Cannot delete the last semester!");
+      return;
+    }
+    
+    // Check if semester has data
+    const hasHomeworks = homeworks.some(hw => (hw.semester || hw.course?.semester) === semester);
+    const hasExams = exams.some(exam => (exam.semester || exam.course?.semester) === semester);
+    const hasCourses = courses.some(course => course.semester === semester);
+    
+    if (hasHomeworks || hasExams || hasCourses) {
+      message.error("Cannot delete semester with existing data!");
+      return;
+    }
+    
+    removeSemester(semester);
+    message.success("Semester deleted successfully!");
+  };
+
+  const handleSetDefaultSemester = (semester: string) => {
+    setSelectedSemester(semester);
+    message.success(`${semester} set as default semester!`);
+  };
+
+  // Handle semester selection from dropdown
+  const handleSemesterChange = (semester: string) => {
+    setSelectedSemester(semester);
+    // If the selected semester is not in allSemesters, add it
+    if (!allSemesters.includes(semester)) {
+      addSemester(semester);
     }
   };
 
@@ -464,8 +551,138 @@ export default function Courses() {
                   <Text>{user?.motto || 'No motto set'}</Text>
                 </div>
               </div>
-              
 
+              {/* Semester Management Section */}
+              <div style={{ marginBottom: 24 }}>
+                <Title level={4} style={{ color: '#1976d2', marginBottom: 12 }}>
+                  Semester Management
+                </Title>
+                <div style={{ marginBottom: 12 }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    Current: <Text strong style={{ color: '#1976d2' }}>{selectedSemester || 'None'}</Text>
+                  </Text>
+                </div>
+                
+                {allSemesters.length > 0 ? (
+                  <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+                    {allSemesters.map((semester, index) => (
+                      <div
+                        key={semester}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 12px',
+                          marginBottom: 8,
+                          borderRadius: 8,
+                          backgroundColor: semester === selectedSemester ? '#e3f2fd' : '#f8f9fa',
+                          border: semester === selectedSemester ? '2px solid #1976d2' : '1px solid #e9ecef'
+                        }}
+                      >
+                        {editingSemester === semester ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                            <Input
+                              value={editingSemesterValue}
+                              onChange={(e) => setEditingSemesterValue(e.target.value)}
+                              onPressEnter={handleSaveSemesterEdit}
+                              style={{ flex: 1, borderRadius: 6 }}
+                              size="small"
+                              autoFocus
+                            />
+                            <Button
+                              type="primary"
+                              size="small"
+                              onClick={handleSaveSemesterEdit}
+                              style={{ borderRadius: 6, background: '#1976d2', borderColor: '#1976d2' }}
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              size="small"
+                              onClick={handleCancelSemesterEdit}
+                              style={{ borderRadius: 6 }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <div style={{ flex: 1 }}>
+                              <Text style={{ fontWeight: semester === selectedSemester ? 600 : 400 }}>
+                                {semester}
+                              </Text>
+                              {semester === selectedSemester && (
+                                <Text type="secondary" style={{ fontSize: 11, marginLeft: 8 }}>
+                                  (Default)
+                                </Text>
+                              )}
+                            </div>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                              {semester !== selectedSemester && (
+                                <Button
+                                  type="text"
+                                  size="small"
+                                  onClick={() => handleSetDefaultSemester(semester)}
+                                  style={{ padding: 4, color: '#1976d2' }}
+                                  title="Set as default"
+                                >
+                                  <CheckOutlined />
+                                </Button>
+                              )}
+                              <Button
+                                type="text"
+                                size="small"
+                                onClick={() => handleEditSemester(semester)}
+                                style={{ padding: 4, color: '#1976d2' }}
+                                title="Edit semester"
+                              >
+                                <EditOutlined />
+                              </Button>
+                              <Button
+                                type="text"
+                                size="small"
+                                danger
+                                onClick={() => handleDeleteSemester(semester)}
+                                style={{ padding: 4 }}
+                                title="Delete semester"
+                              >
+                                <DeleteOutlined />
+                              </Button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <Text type="secondary" style={{ fontSize: 14 }}>
+                    No semesters created yet.
+                  </Text>
+                )}
+                
+                {/* Add new semester in profile */}
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <Input
+                      placeholder="Add new semester"
+                      value={newSemesterValue}
+                      onChange={(e) => setNewSemesterValue(e.target.value)}
+                      onPressEnter={handleAddNewSemester}
+                      style={{ flex: 1, borderRadius: 6 }}
+                      size="small"
+                    />
+                    <Button
+                      type="primary"
+                      size="small"
+                      onClick={handleAddNewSemester}
+                      disabled={!newSemesterValue.trim()}
+                      style={{ borderRadius: 6, background: '#1976d2', borderColor: '#1976d2' }}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+              </div>
               
               <div style={{ textAlign: 'center', display: 'flex', gap: 12, justifyContent: 'center' }}>
                 <Button
@@ -510,10 +727,8 @@ export default function Courses() {
                   placeholder="Select semester"
                   style={{ width: 200 }}
                   value={selectedSemester}
-                  onChange={setSelectedSemester}
+                  onChange={handleSemesterChange}
                   options={semesters.map(semester => ({ value: semester, label: semester }))}
-
-
                 />
 
               </Row>
