@@ -17,7 +17,8 @@ app.use(cors({
     'http://localhost:5173',
     'http://localhost:5174',
     'https://academa-qxzhu4ot2-enkhmendeees-projects.vercel.app',
-    'https://academa-kei.vercel.app'
+    'https://academa-kei.vercel.app',
+    'https://academa-gl5b.onrender.com'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
