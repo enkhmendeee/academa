@@ -163,7 +163,10 @@ Academa is a comprehensive academic management system designed to help students 
 ## 🎨 Screenshots
 
 ### Dashboard Overview
-![Dashboard Overview](images/dashboard-overview.png)
+<img width="1717" height="960" alt="Screenshot 2025-08-11 at 2 20 06 PM" src="https://github.com/user-attachments/assets/1c3845b7-671c-473e-ac58-9807a3fc317f" />
+
+
+![Dashboard Overview](<img width="1717" height="960" alt="Screenshot 2025-08-11 at 2 20 06 PM" src="https://github.com/user-attachments/assets/56e111ae-5368-411e-b19e-3cc83821eeee" />)
 *Main dashboard showing data visualizations, course progress, and assignment overview*
 
 ### Course Management
