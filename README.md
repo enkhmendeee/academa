@@ -174,7 +174,8 @@ Academa is a comprehensive academic management system designed to help students 
 
 
 ### Assignment Tracking
-<img width="1717" height="960" alt="Screenshot 2025-08-11 at 2 20 06 PM" src="https://github.com/user-attachments/assets/05e086fe-ea10-4257-96b9-7356a5c88e62" />
+<img width="1717" height="960" alt="Screenshot 2025-08-11 at 2 20 37 PM" src="https://github.com/user-attachments/assets/c883e4ba-98fe-4d05-83c6-f175603df5c2" />
+
 
 
 ## 🔧 API Endpoints
