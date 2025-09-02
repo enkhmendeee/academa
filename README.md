@@ -78,7 +78,7 @@ Academa is a comprehensive academic management system designed to help students 
 
 ### Prerequisites
 - Node.js 18 or higher
-- PostgreSQL 13 or higher
+- PostgreSQL 13 or higher (Supabase)
 - npm or yarn package manager
 
 ### Installation
@@ -100,13 +100,16 @@ Academa is a comprehensive academic management system designed to help students 
    npm install
    ```
 
-3. **Database Setup**
+3. **Database Setup (Supabase)**
    ```bash
    # Navigate to server directory
    cd ../server
    
-   # Set up your database URL in .env file
-   echo "DATABASE_URL=postgresql://username:password@localhost:5432/academa" > .env
+   # Set up your Supabase connection string in .env (examples below)
+   # Direct connection (5432):
+   # DATABASE_URL=postgresql://USER:PASSWORD@db.YOUR_HASH.supabase.co:5432/postgres?sslmode=require&connect_timeout=15
+   # Connection Pooler (6543, recommended for serverless or platforms that limit connections):
+   # DATABASE_URL=postgresql://USER:PASSWORD@db.YOUR_HASH.supabase.co:6543/postgres?sslmode=require&pgbouncer=true&connection_limit=1&connect_timeout=15
    
    # Run database migrations
    npx prisma migrate dev
@@ -121,7 +124,8 @@ Academa is a comprehensive academic management system designed to help students 
    
    **Server (.env)**
    ```env
-   DATABASE_URL=postgresql://username:password@localhost:5432/academa
+   # Copy this from Supabase > Project Settings > Database (use pooler if on serverless)
+   DATABASE_URL=postgresql://USER:PASSWORD@db.YOUR_HASH.supabase.co:6543/postgres?sslmode=require&pgbouncer=true&connection_limit=1&connect_timeout=15
    JWT_SECRET=your_jwt_secret_here
    PORT=3000
    ```
@@ -216,14 +220,13 @@ Academa is a comprehensive academic management system designed to help students 
 1. Connect your GitHub repository to Render
 2. Set build command: `cd server && npm install && npx prisma generate`
 3. Set start command: `cd server && npm start`
-4. Configure environment variables (DATABASE_URL, JWT_SECRET)
+4. Configure environment variables (use your Supabase `DATABASE_URL`, and `JWT_SECRET`)
 5. Deploy automatically on push to main branch
 
 ## 🛠️ Development
 
 ### Project Structure
-```
-academa/
+```academa/
 ├── client/                 # React frontend
 │   ├── src/
 │   │   ├── components/     # Reusable UI components
@@ -287,3 +290,4 @@ For support, email nergui.eegii04@gmail.com or create an issue in the GitHub rep
 ---
 
 **Built with ❤️ for students everywhere**
+
