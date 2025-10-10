@@ -6,11 +6,13 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "typeRoots": ["./types", "./node_modules/@types"],
+    "types": ["node", "express"],
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "resolveJsonModule": true
   },
-  "include": ["src", "types"],
-  "exclude": ["dist"]
+  "include": ["src/**/*", "types/**/*"],
+  "exclude": ["dist", "node_modules"]
 }

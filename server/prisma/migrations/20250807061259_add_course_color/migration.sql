@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE `Course` ADD COLUMN `color` VARCHAR(191) NULL DEFAULT '#1976d2';

@@ -8,6 +8,9 @@ import examRoutes from './routes/examRoutes';
 import userSemesterRoutes from './routes/userSemesterRoutes';
 import cors from "cors";
 
+// Import type declarations
+import '../types/express';
+
 const app = express();
 app.use(express.json());
 app.use(cors({
@@ -18,7 +21,8 @@ app.use(cors({
     'http://localhost:5174',
     'https://academa-qxzhu4ot2-enkhmendeees-projects.vercel.app',
     'https://academa-kei.vercel.app',
-    'https://academa-gl5b.onrender.com'
+    'https://academa-gl5b.onrender.com',
+    'https://academaa.fly.dev'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -42,13 +46,35 @@ app.get('/test', (req, res) => {
   res.json({ message: 'Server is working!' });
 });
 
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 app.get('/users', async (req, res) => {
   const users = await prisma.user.findMany();
   res.json(users);
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
+const HOST = process.env.HOST || '0.0.0.0';
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Add error handling
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+app.listen(PORT, HOST, () => {
+  console.log(`Server running on ${HOST}:${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Database URL configured: ${!!process.env.DATABASE_URL}`);
 });
