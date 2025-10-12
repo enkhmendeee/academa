@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_URL = window.location.hostname === 'localhost' 
   ? "http://localhost:3000/api"
-  : "https://academa-gl5b.onrender.com/api";
+  : "https://academaa.fly.dev/api";
 
 // Get auth token from localStorage
 const getAuthToken = () => localStorage.getItem('token');

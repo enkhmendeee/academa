@@ -50,12 +50,10 @@ PORT=3000
 ```javascript
 // In server/src/index.ts
 const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5000', // Add local development port
-  'https://academa-qxzhu4ot2-enkhmendeees-projects.vercel.app',
-  'https://academa-kei.vercel.app',
-  'https://academa-gl5b.onrender.com',
-  'https://academaa.fly.dev'
+  'http://localhost:3000',  // React dev server
+  'http://localhost:5000',  // Local development
+  'https://academa-kei.vercel.app',  // Vercel frontend
+  'https://academaa.fly.dev'  // Fly.io backend
 ];
 
 // Add environment-based CORS

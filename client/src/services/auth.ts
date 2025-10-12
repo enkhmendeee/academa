@@ -4,7 +4,7 @@ import axios from "axios";
 const api = axios.create({
   baseURL: window.location.hostname === 'localhost' 
     ? "http://localhost:5000/api"
-    : "https://academa-gl5b.onrender.com/api",
+    : "https://academaa.fly.dev/api",
 });
 
 // Log the API base URL for debugging
