@@ -1,13 +1,19 @@
 {
   "devDependencies": {
     "prisma": "^6.12.0",
-    "ts-node-dev": "^2.0.0"
+    "ts-node-dev": "^2.0.0",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3"
   },
   "dependencies": {
     "@prisma/client": "^6.12.0",
     "@vercel/analytics": "^1.5.0"
   },
   "scripts": {
-    "dev": "ts-node-dev src/index.ts"
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && cross-env PORT=5000 npm run dev",
+    "dev:client": "cd client && npm start",
+    "build": "cd server && npm run build && cd ../client && npm run build",
+    "start": "cd server && npm start"
   }
 }

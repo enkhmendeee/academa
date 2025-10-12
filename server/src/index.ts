@@ -9,21 +9,29 @@ import userSemesterRoutes from './routes/userSemesterRoutes';
 import cors from "cors";
 
 // Import type declarations
-import '../types/express';
+/// <reference path="../types/express.d.ts" />
 
 const app = express();
 app.use(express.json());
+const allowedOrigins = [
+  'http://localhost:3000',  // React dev server
+  'http://localhost:5000',  // Local development
+  'https://academa-kei.vercel.app',  // Vercel frontend
+  'https://academaa.fly.dev'  // Fly.io backend
+];
+
 app.use(cors({
-  origin: [
-    'http://localhost:3001',
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'https://academa-qxzhu4ot2-enkhmendeees-projects.vercel.app',
-    'https://academa-kei.vercel.app',
-    'https://academa-gl5b.onrender.com',
-    'https://academaa.fly.dev'
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
