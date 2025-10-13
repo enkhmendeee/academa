@@ -38,13 +38,42 @@ export const compareValues = (a: any, b: any, order: "ascend" | "descend") => {
   }
 };
 
-// Get default date time for forms
+// Get default date time for forms (in local timezone)
 export const getDefaultDateTime = () => {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}T00:00`;
+  // Get local timezone offset in minutes
+  const timezoneOffset = now.getTimezoneOffset();
+  // Adjust the date by the timezone offset to get local time
+  const localDate = new Date(now.getTime() - (timezoneOffset * 60000));
+  
+  const year = localDate.getFullYear();
+  const month = String(localDate.getMonth() + 1).padStart(2, '0');
+  const day = String(localDate.getDate()).padStart(2, '0');
+  const hours = String(localDate.getHours()).padStart(2, '0');
+  const minutes = String(localDate.getMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+// Convert local datetime to UTC for API calls
+export const toUTCString = (localDateTime: string) => {
+  // Create a date object from the local datetime string
+  const localDate = new Date(localDateTime);
+  // Return ISO string which will be in UTC
+  return localDate.toISOString();
+};
+
+// Convert UTC datetime from API to local datetime for display
+export const fromUTCToLocal = (utcDateTime: string) => {
+  const date = new Date(utcDateTime);
+  // Format for datetime-local input
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
 // Vibrant color palette for courses

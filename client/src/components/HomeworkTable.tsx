@@ -1,6 +1,7 @@
 import React from "react";
 import { Table, Input, Select, Button, Tag, Space, Dropdown, Typography } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
+import { fromUTCToLocal } from "../utils/homeworkUtils";
 
 const { Text } = Typography;
 
@@ -158,7 +159,7 @@ export const HomeworkTable: React.FC<HomeworkTableProps> = ({
         const isExam = record.type === 'exam' || record.examType;
         const fieldName = isExam ? 'examDate' : 'dueDate';
         const isEditing = editingHomework === record.id && editingField === fieldName;
-        const editValue = editValues[record.id] ?? (date ? new Date(date).toISOString().slice(0, 16) : '');
+        const editValue = editValues[record.id] ?? (date ? fromUTCToLocal(date) : '');
         
         return isEditing ? (
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -197,7 +198,7 @@ export const HomeworkTable: React.FC<HomeworkTableProps> = ({
               size="small"
               onClick={() => {
                 setEditingHomework(null);
-                setEditValue(record.id, date ? new Date(date).toISOString().slice(0, 16) : '');
+                setEditValue(record.id, date ? fromUTCToLocal(date) : '');
               }}
               style={{ 
                 borderRadius: 8,

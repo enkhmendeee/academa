@@ -20,7 +20,7 @@ import { updateProfile } from "../services/auth";
 import { AssignmentForm } from "../components/AssignmentForm";
 import { FilterControls } from "../components/FilterControls";
 import { HomeworkTable } from "../components/HomeworkTable";
-import { getStatusColor, getStatusDisplayText, compareValues, vibrantColors, filterBySemester } from "../utils/homeworkUtils";
+import { getStatusColor, getStatusDisplayText, compareValues, vibrantColors, filterBySemester, toUTCString } from "../utils/homeworkUtils";
 
 const { Sider, Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -176,7 +176,13 @@ export default function Homeworks() {
     if (!token) return;
     setAddingHomework(true);
     try {
-      const newHomework = await createHomework({ ...values, semester: selectedSemester });
+      // Convert local datetime to UTC for API
+      const homeworkData = {
+        ...values,
+        semester: selectedSemester,
+        dueDate: toUTCString(values.dueDate)
+      };
+      const newHomework = await createHomework(homeworkData);
       addLocalHomework(newHomework);
       message.success("Homework added successfully!");
     } catch (error) {
@@ -207,7 +213,13 @@ export default function Homeworks() {
     if (!token) return;
     setAddingHomework(true);
     try {
-      const newExam = await createExam({ ...values, semester: selectedSemester });
+      // Convert local datetime to UTC for API
+      const examData = {
+        ...values,
+        semester: selectedSemester,
+        examDate: toUTCString(values.examDate)
+      };
+      const newExam = await createExam(examData);
       addLocalExam(newExam);
       message.success("Exam added successfully!");
     } catch (error) {
@@ -353,9 +365,15 @@ export default function Homeworks() {
   const handleUpdateHomeworkField = async (homeworkId: number, field: string, value: any) => {
     if (!token) return;
     try {
-      await updateHomework(homeworkId, { [field]: value });
+      // Convert date fields to UTC before sending to API
+      let processedValue = value;
+      if (field === 'dueDate' || field === 'examDate') {
+        processedValue = toUTCString(value);
+      }
       
-      // Update local state immediately
+      await updateHomework(homeworkId, { [field]: processedValue });
+      
+      // Update local state immediately (keep original value for display)
       updateLocalHomework(homeworkId, { [field]: value });
       
       // Show congratulatory message and animation for completed homework
