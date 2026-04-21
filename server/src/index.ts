@@ -2,7 +2,7 @@ import express from 'express';
 import prisma from './config/prisma';
 import authRoutes from './routes/auth';
 import protectedRoutes from './routes/protected';
-import homeworkRoutes from './routes/homework.route';
+import homeworkRoutes from './routes/homeworkRoutes';
 import courseRoutes from './routes/courseRoutes';
 import examRoutes from './routes/examRoutes';
 import userSemesterRoutes from './routes/userSemesterRoutes';

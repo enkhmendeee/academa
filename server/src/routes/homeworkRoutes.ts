@@ -5,7 +5,7 @@ import {
   createHomework,
   updateHomework,
   deleteHomework,
-} from "../controllers/homework.controller";
+} from "../controllers/homeworkController";
 import { authenticateToken } from "../middleware/authMiddleware";
 import { body, param } from "express-validator";
 import { validateRequest } from "../middleware/validateRequest";
