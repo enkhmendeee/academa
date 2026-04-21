@@ -5,7 +5,7 @@ import { body, validationResult } from 'express-validator';
 // Get all exams for a user
 export const getExams = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user.id;
     
     const exams = await prisma.exam.findMany({
       where: {
@@ -34,7 +34,7 @@ export const createExam = async (req: Request, res: Response) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const userId = (req as any).user.id;
+    const userId = req.user.id;
     const { title, description, examDate, courseId, semester, examType, location, duration } = req.body;
 
     // Verify the course belongs to the user
@@ -81,7 +81,7 @@ export const updateExam = async (req: Request, res: Response) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const userId = (req as any).user.id;
+    const userId = req.user.id;
     const examId = parseInt(req.params.id);
     const updateData = req.body;
 
@@ -141,7 +141,7 @@ export const updateExam = async (req: Request, res: Response) => {
 // Delete an exam
 export const deleteExam = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user.id;
     const examId = parseInt(req.params.id);
 
     // Verify the exam belongs to the user
@@ -172,7 +172,7 @@ export const deleteExam = async (req: Request, res: Response) => {
 // Get a single exam
 export const getExam = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user.id;
     const examId = parseInt(req.params.id);
 
     const exam = await prisma.exam.findFirst({
