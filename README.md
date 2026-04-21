@@ -1,4 +1,4 @@
-# Academa - Academic Management System
+# Academa
 
 [![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-blue.svg)](https://www.typescriptlang.org/)
@@ -6,289 +6,161 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13+-blue.svg)](https://www.postgresql.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-ORM-orange.svg)](https://www.prisma.io/)
 
-## 📚 Overview
+**Live in production** — frontend at [academa-kei.vercel.app](https://academa-kei.vercel.app), API at [academaa.fly.dev](https://academaa.fly.dev).
 
-Academa is a comprehensive academic management system designed to help students organize and track their coursework, assignments, and exams across multiple semesters. Built with modern web technologies, it provides an intuitive interface for managing academic responsibilities with powerful visualization and organization features.
+Students juggle four to six courses per semester, each with its own stream of homework, exams, and grading deadlines. The default tools — a spreadsheet per term, sticky notes on a monitor, or a mental model that collapses by week four — don't survive contact with a real workload. Deadlines slip, grades get lost, and it's almost impossible to see at a glance where the semester actually stands.
 
-## ✨ Key Features
+Academa is a web app that collapses that sprawl into one dashboard. Create semesters, add courses, and track every homework and exam through its lifecycle (`PENDING` → `IN_PROGRESS` → `COMPLETED` → `OVERDUE`). The courses view charts homework distribution per course; the dashboard shows upcoming deadlines alongside a monthly calendar. Filtering, color coding, and per-course progress bars make it easy to zoom in on what's next.
 
-### 🎯 **Semester Management**
-- Create and manage multiple academic semesters
-- Set default semesters for quick access
-- Organize courses and assignments by semester
-- Edit and delete semesters with data validation
+![Dashboard](./docs/images/dashboard.png)
 
-### 📖 **Course Organization**
-- Create courses with custom names and descriptions
-- Assign vibrant color coding to courses for visual distinction
-- Track course progress with real-time completion statistics
-- View course-specific homework and exam lists
+## Tech stack
 
-### 📝 **Assignment Tracking**
-- **Homework Management**: Create, edit, and track homework assignments
-- **Exam Scheduling**: Schedule and monitor upcoming exams
-- **Status Tracking**: Monitor assignment status (Pending, In Progress, Completed, Overdue)
-- **Due Date Management**: Automatic overdue detection and notifications
-- **Grade Recording**: Track and record assignment grades
+- **Frontend** — React 18 + TypeScript, Ant Design, ApexCharts, React Router, Axios. Deployed to Vercel.
+- **Backend** — Node 18 + Express (TypeScript), Prisma ORM, JSON Web Tokens, `express-rate-limit`. Deployed to Fly.io (`sjc`) on a `shared-cpu-1x` / 256 MB VM.
+- **Database** — PostgreSQL on Supabase, reached through their pgBouncer pooler.
+- **Tests** — Jest + Supertest hitting a real Postgres container for integration coverage (register/login happy paths + error cases, plus cross-user ownership enforcement on `/api/homeworks`).
 
-### 📊 **Data Visualization**
-- **Pie Charts**: Visualize homework distribution by course
-- **Bar Charts**: Track assignment completion status across courses
-- **Progress Bars**: Real-time course completion progress
-- **Interactive Dashboards**: Comprehensive overview of academic performance
+## Features
 
-### 🔍 **Advanced Filtering & Sorting**
-- Filter assignments by status, course, and semester
-- Sort by due date, title, course, status, or grade
-- Hide completed assignments for focused workflow
-- Real-time search and filtering capabilities
+- Multiple academic semesters, with a default semester for quick access.
+- Courses with custom names, descriptions, and color coding; per-course progress bars roll up homework completion in real time.
+- Homework and exam records with status, due date, grade, and (for exams) location, type, and duration fields.
+- Pie + bar charts for homework distribution and completion status across courses; monthly calendar overlay on the dashboard.
+- Status-aware filtering and sorting by status, course, semester, due date, or grade; hide completed assignments to focus on what's pending.
+- JWT auth with rate-limited `register`/`login` endpoints and per-user data isolation enforced on every query.
 
-### 👤 **User Management**
-- Secure user authentication and authorization
-- Personalized user profiles with custom mottos
-- Session management with automatic token handling
-- Responsive design for all device types
+![Courses](./docs/images/courses.png)
+![Homeworks](./docs/images/homeworks.png)
 
-## 🏗️ Technical Architecture
+## Deployment story
 
-### Frontend
-- **React 18** with TypeScript for type safety
-- **Ant Design** for modern, responsive UI components
-- **React Router** for seamless navigation
-- **ApexCharts** for interactive data visualizations
-- **Axios** for HTTP client with interceptors
-- **Context API** for state management
+This project's strongest engineering narrative lives in the move from Render to Fly.io.
 
-### Backend
-- **Node.js** with Express.js framework
-- **TypeScript** for type-safe server-side code
-- **Prisma ORM** for database management
-- **PostgreSQL** for robust data storage
-- **JWT** for secure authentication
-- **CORS** enabled for cross-origin requests
+The backend originally ran on Render's free tier, which spins down between requests — fine for a demo, brutal for anyone actually trying to use the app because of the cold-start penalty. Upgrading to an always-on Render instance plus the bits I'd need for a serious deployment (migration worker, small staging environment) brought the default cost estimate to roughly **$38/mo**. Migrating to Fly.io brought that to **$0**:
 
-### Database Schema
-- **Users**: Authentication and profile management
-- **Courses**: Course information with color coding
-- **Homeworks**: Assignment details with status tracking
-- **Exams**: Exam scheduling and management
-- **UserSemesters**: Semester organization per user
+- **Custom `Dockerfile`** — multi-step build on `node:18-alpine`. Installs dev deps, compiles TypeScript, trims back to production deps, drops root, and wraps the process in `dumb-init` for clean signal handling. Small enough to sit inside the free-tier image allowance with no tricks.
+- **Rightsized VM** — `shared-cpu-1x` with 256 MB RAM is enough for this workload. `auto_stop_machines = "suspend"` plus `min_machines_running = 0` means the app suspends when idle and wakes on the next request, so I pay nothing for time nobody's using.
+- **Auto-migrations on deploy** — `release_command = 'npx prisma migrate deploy'` in `fly.toml` runs the migration step ahead of each release, so schema and code ship together and there's no manual migration dance.
+- **Supabase pgBouncer fix** — Prisma + Supabase's pooler throws *"prepared statement already exists"* errors once more than one instance is in play, because pgBouncer in transaction mode doesn't keep a stable session per connection. Appending `?pgbouncer=true&connection_limit=1` to `DATABASE_URL` tells Prisma to disable prepared statements and hold a single pooled connection, which unblocks horizontal scaling without standing up a dedicated pool. Wiring lives in `server/src/config/prisma.ts`.
 
-## 🚀 Getting Started
+The frontend stays on Vercel, which remains free for hobby use and gives per-PR preview deployments for free.
+
+## Getting started
 
 ### Prerequisites
-- Node.js 18 or higher
-- PostgreSQL 13 or higher (Supabase)
-- npm or yarn package manager
 
-### Installation
+- Node 18+
+- PostgreSQL 13+ (Supabase for production; any local Postgres works for dev)
+- Docker, if you want to run the integration test suite
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/academa.git
-   cd academa
-   ```
+### Install
 
-2. **Install dependencies**
-   ```bash
-   # Install server dependencies
-   cd server
-   npm install
-   
-   # Install client dependencies
-   cd ../client
-   npm install
-   ```
+```bash
+git clone https://github.com/enkhmendeee/academa.git
+cd academa
+(cd server && npm install)
+(cd client && npm install)
+```
 
-3. **Database Setup (Supabase)**
-   ```bash
-   # Navigate to server directory
-   cd ../server
-   
-   # Set up your Supabase connection string in .env (examples below)
-   # Direct connection (5432):
-   # DATABASE_URL=postgresql://USER:PASSWORD@db.YOUR_HASH.supabase.co:5432/postgres?sslmode=require&connect_timeout=15
-   # Connection Pooler (6543, recommended for serverless or platforms that limit connections):
-   # DATABASE_URL=postgresql://USER:PASSWORD@db.YOUR_HASH.supabase.co:6543/postgres?sslmode=require&pgbouncer=true&connection_limit=1&connect_timeout=15
-   
-   # Run database migrations
-   npx prisma migrate dev
-   
-   # Generate Prisma client
-   npx prisma generate
-   ```
+### Environment
 
-4. **Environment Configuration**
-   
-   Create `.env` files in both server and client directories:
-   
-   **Server (.env)**
-   ```env
-   # Copy this from Supabase > Project Settings > Database (use pooler if on serverless)
-   DATABASE_URL=postgresql://USER:PASSWORD@db.YOUR_HASH.supabase.co:6543/postgres?sslmode=require&pgbouncer=true&connection_limit=1&connect_timeout=15
-   JWT_SECRET=your_jwt_secret_here
-   PORT=3000
-   ```
-   
-   **Client (.env)**
-   ```env
-   REACT_APP_API_URL=http://localhost:3000/api
-   ```
+Create `server/.env`:
 
-5. **Start the application**
-   ```bash
-   # Start the server (from server directory)
-   npm run dev
-   
-   # Start the client (from client directory, in a new terminal)
-   cd ../client
-   npm start
-   ```
+```env
+DATABASE_URL=postgresql://USER:PASSWORD@db.YOUR_HASH.supabase.co:6543/postgres?sslmode=require&pgbouncer=true&connection_limit=1
+JWT_SECRET=replace-me
+PORT=3000
+```
 
-6. **Access the application**
-   - Frontend: http://localhost:3001
-   - Backend API: http://localhost:3000
+Create `client/.env`:
 
-## 📱 Usage Guide
+```env
+REACT_APP_API_URL=http://localhost:3000/api
+```
 
-### First Time Setup
-1. **Register an account** with your email and username
-2. **Create your first semester** (e.g., "Fall 2024", "Spring 2025")
-3. **Add courses** to your semester with custom colors
-4. **Start adding assignments** and exams
+### Database
 
-### Managing Your Academic Life
-1. **Dashboard Overview**: View all your assignments and progress at a glance
-2. **Course Management**: Organize courses by semester with visual color coding
-3. **Assignment Tracking**: Monitor homework and exam status with real-time updates
-4. **Progress Visualization**: Use charts and progress bars to track completion
-5. **Filtering & Sorting**: Find specific assignments quickly with advanced filters
+```bash
+cd server
+npx prisma migrate dev
+```
 
-## 🎨 Screenshots
+### Run
 
-### Dashboard Overview
-<img width="1717" height="960" alt="Screenshot 2025-08-11 at 2 20 06 PM" src="https://github.com/user-attachments/assets/1c3845b7-671c-473e-ac58-9807a3fc317f" />
+```bash
+# terminal 1
+cd server && npm run dev
 
-### Course Management
-<img width="1717" height="960" alt="Screenshot 2025-08-11 at 2 20 23 PM" src="https://github.com/user-attachments/assets/ea0e0d41-77a7-4390-b3da-ceffd93e6c61" />
+# terminal 2
+cd client && npm start
+```
 
+Frontend at `http://localhost:3001`, API at `http://localhost:3000`.
 
-### Assignment Tracking
-<img width="1717" height="960" alt="Screenshot 2025-08-11 at 2 20 37 PM" src="https://github.com/user-attachments/assets/c883e4ba-98fe-4d05-83c6-f175603df5c2" />
+### Tests
 
+Integration tests hit a real Postgres in Docker:
 
+```bash
+docker run -d --name academa-test-db \
+  -e POSTGRES_PASSWORD=test -e POSTGRES_USER=test -e POSTGRES_DB=academa_test \
+  -p 5433:5432 postgres:16
+```
 
-## 🔧 API Endpoints
+Create `server/.env.test`:
 
-### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `PATCH /api/auth/profile` - Update user profile
+```env
+DATABASE_URL=postgresql://test:test@localhost:5433/academa_test
+DIRECT_URL=postgresql://test:test@localhost:5433/academa_test
+JWT_SECRET=test-secret
+NODE_ENV=test
+```
 
-### Courses
-- `GET /api/courses` - Get user courses
-- `POST /api/courses` - Create new course
-- `PATCH /api/courses/:id` - Update course
-- `DELETE /api/courses/:id` - Delete course
+Then:
 
-### Homeworks
-- `GET /api/homeworks` - Get user homeworks
-- `POST /api/homeworks` - Create new homework
-- `PATCH /api/homeworks/:id` - Update homework
-- `DELETE /api/homeworks/:id` - Delete homework
+```bash
+cd server
+DATABASE_URL=postgresql://test:test@localhost:5433/academa_test \
+DIRECT_URL=postgresql://test:test@localhost:5433/academa_test \
+  npx prisma db push --skip-generate
+npm test
+```
 
-### Exams
-- `GET /api/exams` - Get user exams
-- `POST /api/exams` - Create new exam
-- `PATCH /api/exams/:id` - Update exam
-- `DELETE /api/exams/:id` - Delete exam
+## API
 
-### Semesters
-- `GET /api/semesters` - Get user semesters
-- `POST /api/semesters` - Add new semester
-- `PATCH /api/semesters` - Update semester
-- `DELETE /api/semesters/:name` - Delete semester
+All routes under `/api/*` are rate-limited (100 req/min/IP). `/api/auth/login` and `/api/auth/register` carry an additional strict limiter (5 req / 15 min / IP). Every resource route is JWT-gated and scoped to the authenticated user.
 
-## 🚀 Deployment
+### Auth
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `PATCH /api/auth/profile`
 
-### Frontend (Vercel)
-1. Connect your GitHub repository to Vercel
-2. Set build command: `cd client && npm install && npm run build`
-3. Set output directory: `client/build`
-4. Deploy automatically on push to main branch
+### Resources (same verb pattern per entity)
+- `GET`/`POST`/`PATCH`/`DELETE` on `/api/courses`, `/api/homeworks`, `/api/exams`
+- `/api/semesters` uses the name as the delete key: `DELETE /api/semesters/:name`
 
-### Backend (Render)
-1. Connect your GitHub repository to Render
-2. Set build command: `cd server && npm install && npx prisma generate`
-3. Set start command: `cd server && npm start`
-4. Configure environment variables (use your Supabase `DATABASE_URL`, and `JWT_SECRET`)
-5. Deploy automatically on push to main branch
+## Project layout
 
-## 🛠️ Development
-
-### Project Structure
-```academa/
+```
+academa/
 ├── client/                 # React frontend
-│   ├── src/
-│   │   ├── components/     # Reusable UI components
-│   │   ├── context/        # React Context providers
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── pages/          # Page components
-│   │   ├── services/       # API service functions
-│   │   └── utils/          # Utility functions
-│   └── public/             # Static assets
-├── server/                 # Node.js backend
-│   ├── src/
-│   │   ├── controllers/    # Route controllers
-│   │   ├── middleware/     # Express middleware
-│   │   ├── routes/         # API routes
-│   │   └── utils/          # Utility functions
-│   └── prisma/             # Database schema and migrations
-└── README.md
+│   └── src/{components,context,hooks,pages,services,utils}
+├── server/                 # Express + Prisma backend
+│   ├── src/{controllers,middleware,routes,config,__tests__}
+│   └── prisma/
+└── docs/images/            # README screenshots
 ```
 
-### Available Scripts
+## Scripts
 
-**Server**
-```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm start           # Start production server
-npm run migrate     # Run database migrations
-```
+- **Server** — `npm run dev | build | start | test | db:push | db:migrate | db:reset`
+- **Client** — `npm start | build | test`
 
-**Client**
-```bash
-npm start           # Start development server
-npm run build       # Build for production
-npm test            # Run tests
-npm run eject       # Eject from Create React App
-```
+## License
 
-## 🤝 Contributing
+MIT — see [LICENSE](LICENSE).
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## Support
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **Ant Design** for the beautiful UI components
-- **ApexCharts** for the interactive data visualizations
-- **Prisma** for the excellent ORM experience
-- **React** team for the amazing framework
-
-## 📞 Support
-
-For support, email nergui.eegii04@gmail.com or create an issue in the GitHub repository.
-
----
-
-**Built with ❤️ for students everywhere**
-
+For support, email `nergui.eegii04@gmail.com` or open an issue on GitHub.
