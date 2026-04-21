@@ -5,12 +5,14 @@ import jwt from 'jsonwebtoken';
 import { body } from "express-validator";
 import { validateRequest } from "../middleware/validateRequest";
 import { authenticateToken } from "../middleware/authMiddleware";
+import { authLimiter } from "../middleware/rateLimiters";
 import prisma from "../config/prisma";
 
 const router = express.Router();
 
 router.post(
   '/register',
+  authLimiter,
   [
     body('email').isEmail(),
     body('password').isLength({ min: 6 }),
@@ -79,6 +81,7 @@ router.post(
 
 router.post(
   '/login',
+  authLimiter,
   [
     body('email').isEmail(),
     body('password').notEmpty(),

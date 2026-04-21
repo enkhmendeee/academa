@@ -7,6 +7,7 @@ import courseRoutes from './routes/courseRoutes';
 import examRoutes from './routes/examRoutes';
 import userSemesterRoutes from './routes/userSemesterRoutes';
 import cors from "cors";
+import { generalLimiter } from './middleware/rateLimiters';
 
 // Import type declarations
 /// <reference path="../types/express.d.ts" />
@@ -42,6 +43,8 @@ app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
   next();
 });
+
+app.use('/api', generalLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api', protectedRoutes);
